@@ -1,0 +1,494 @@
+{
+  "format": "workflow-run",
+  "formatVersion": 1,
+  "id": "run-mve4sno4-y7n1",
+  "title": "Weekly or biweekly releases? (example)",
+  "tag": "release-cadence@1.0.0#885e6960",
+  "status": "completed",
+  "createdAt": "2026-10-18T18:00:44.500Z",
+  "updatedAt": "2026-10-18T18:00:45.919Z",
+  "completedAt": "2026-10-18T18:00:45.916Z",
+  "variables": {
+    "question": "Should our team move from weekly to biweekly releases?",
+    "context": "Six engineers, one web app, manual QA before each release."
+  },
+  "template": {
+    "id": "release-cadence",
+    "title": "Release Cadence Review",
+    "version": "1.0.0",
+    "sourceFile": "example-workflow.json",
+    "hash": "sha256:885e6960d89d7ff1a6f3dc09ce31ab652f2a4bab74762a9ce765521ae7030048",
+    "definition": {
+      "format": "workflow-template",
+      "formatVersion": 1,
+      "id": "release-cadence",
+      "title": "Release Cadence Review",
+      "version": "1.0.0",
+      "description": "A small example workflow: research a decision, check the sources, review the findings yourself, then get a recommendation. Shows every feature of the workflow format.",
+      "intro": [
+        "Session 01 researches the decision and lists open questions for you.",
+        "Session 02 checks that the cited sources say what the research claims.",
+        "You review both, answer the questions, and choose to continue, run another round, pause or stop.",
+        "Session 03 writes a short recommendation. If it says to investigate further, you can do a quick follow-up or a new round."
+      ],
+      "titleVariable": "question",
+      "variables": [
+        {
+          "key": "question",
+          "label": "Decision to investigate",
+          "help": "One sentence, phrased as a question.",
+          "placeholder": "Should our team move from weekly to biweekly releases?",
+          "required": true,
+          "multiline": true
+        },
+        {
+          "key": "context",
+          "label": "Background (optional)",
+          "help": "Team size, product, constraints. Leave blank if none.",
+          "multiline": true
+        }
+      ],
+      "steps": [
+        {
+          "id": "01",
+          "label": "Researcher",
+          "kind": "ai",
+          "description": "Researches the decision and lists the strongest arguments on each side, with sources.",
+          "inputs": [],
+          "prompt": "# Session 01 — Researcher\n\n{{#priorRound}}This is round {{round}} of this investigation. The attached `round-{{prevRound}}_*` files are the previous round's reports and the user's answers. Treat the user's answers as their scenario. Build on the earlier work: re-check disputed claims and close the gaps it left.\n\n{{/priorRound}}Decision to investigate: {{question}}\n{{#context}}Background: {{context}}\n{{/context}}\nResearch this decision using reliable sources.\n\n**Output:** `01_research.md`, 500 words maximum, titled **Research Report**:\n1. Up to four numbered claims (R1, R2, …) for and against, each with a source link.\n2. A section titled **Open questions**: at most three numbered questions for the user whose answers would change the conclusion.",
+          "output": {
+            "file": "01_research.md",
+            "title": "Research report"
+          },
+          "wordLimit": 500,
+          "checklist": [
+            "Every claim has a source link",
+            "Ends with open questions"
+          ]
+        },
+        {
+          "id": "02",
+          "label": "Source Checker",
+          "kind": "ai",
+          "description": "Checks each numbered claim against its source.",
+          "inputs": [
+            "01"
+          ],
+          "prompt": "# Session 02 — Source Checker\n\nFor each numbered claim in `01_research.md`, open its source and say whether the source supports it: Supported, Partly supported, or Not supported, with one sentence of explanation.\n\n**Output:** `02_check.md`, 400 words maximum, titled **Source Check**. End with a heading line in exactly this form: `## Gate result: Pass`, `## Gate result: Revise` or `## Gate result: Block`.",
+          "output": {
+            "file": "02_check.md",
+            "title": "Source check"
+          },
+          "wordLimit": 400,
+          "signals": [
+            {
+              "key": "gate",
+              "label": "Source gate",
+              "match": "gate",
+              "options": [
+                "Pass",
+                "Revise",
+                "Block"
+              ],
+              "warnOn": [
+                "Revise",
+                "Block"
+              ],
+              "warning": "The checker flagged claims in the research. Correct them and run the check again, or continue and carry the flag forward.",
+              "fix": {
+                "step": "01",
+                "on": [
+                  "Revise"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "review",
+          "label": "Your Review",
+          "kind": "human",
+          "description": "Read the research and the source check, answer the open questions, and decide what happens next.",
+          "inputs": [
+            "01",
+            "02"
+          ],
+          "output": {
+            "file": "review_answers.md",
+            "title": "Your review"
+          },
+          "fields": [
+            {
+              "key": "answers",
+              "type": "text",
+              "label": "Your answers",
+              "help": "Answer whichever questions apply, in any order.",
+              "placeholder": "Answer the questions above, and add anything else relevant.",
+              "questionsFrom": "01"
+            },
+            {
+              "key": "notes",
+              "type": "text",
+              "label": "Additional context or corrections",
+              "placeholder": "Constraints, facts the research missed… or leave blank."
+            },
+            {
+              "key": "next",
+              "type": "decision",
+              "label": "What would you like to do?",
+              "options": [
+                {
+                  "value": "go",
+                  "label": "Get the recommendation",
+                  "description": "Continue to Session 03.",
+                  "effect": "continue"
+                },
+                {
+                  "value": "again",
+                  "label": "Run another round with this context",
+                  "description": "Back to Session 01 with everything from this round as input.",
+                  "effect": "loop",
+                  "carryInto": [
+                    "01"
+                  ]
+                },
+                {
+                  "value": "pause",
+                  "label": "Pause",
+                  "description": "Come back to this run later.",
+                  "effect": "pause"
+                },
+                {
+                  "value": "stop",
+                  "label": "Stop here",
+                  "description": "End the run; the summary shows what was gathered.",
+                  "effect": "stop"
+                }
+              ]
+            }
+          ],
+          "outputTemplate": "# Review: {{question}}\n\n## Answers to the open questions\n\n{{answers}}\n\n## Additional context\n\n{{notes}}\n\n## Decision\n\n{{next}}"
+        },
+        {
+          "id": "03",
+          "label": "Recommender",
+          "kind": "ai",
+          "description": "Combines the research, the source check and your answers into a short recommendation.",
+          "inputs": [
+            "01",
+            "02",
+            "review"
+          ],
+          "prompt": "# Session 03 — Recommender\n\nWrite a short recommendation for: {{question}}\n\nUse only the attached files. Treat the user's answers in `review_answers.md` as their scenario, not as verified evidence, and mention any claims the source check did not support.{{#followUp}}\n\n**Follow-up:** An earlier version of this recommendation suggested investigating further. `follow-up_previous_*` is that earlier version, `follow-up_answers.md` holds what the user added, and `follow-up_research.md` (if present) holds research findings. Write an updated recommendation and say briefly what changed. Only suggest **Investigate further** again if more research could still settle a critical question; if what remains can only be answered by the user, suggest **Proceed conditionally** and state those answers as the conditions.{{/followUp}}\n\n**Output:** `03_recommendation.md`, 300 words maximum, titled **Recommendation**:\n- Current assessment (2–3 sentences)\n- **Suggested next action:** Proceed / Proceed conditionally / Investigate further / Do not proceed — with a brief reason\n- A section titled **Open questions**: at most three numbered questions that remain.",
+          "output": {
+            "file": "03_recommendation.md",
+            "title": "Recommendation"
+          },
+          "wordLimit": 300,
+          "feature": true,
+          "signals": [
+            {
+              "key": "action",
+              "label": "Suggested next action",
+              "match": "next action",
+              "options": [
+                "Proceed",
+                "Proceed conditionally",
+                "Investigate further",
+                "Do not proceed"
+              ],
+              "followUp": [
+                "Investigate further"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "position": 3,
+  "progress": {
+    "completed": 4,
+    "total": 4
+  },
+  "steps": [
+    {
+      "id": "01",
+      "label": "Researcher",
+      "kind": "ai",
+      "outputFile": "01_research.md",
+      "status": "done",
+      "response": "# Research Report\n\n**R1.** Teams that release more often tend to have smaller, lower-risk changes. — Source: [Example DevOps survey](https://example.com/devops-survey)\n\n**R2.** Biweekly releases reduce release overhead for teams with manual QA. — Source: [Example engineering blog](https://example.com/release-overhead)\n\n**R3.** Longer cycles can delay customer feedback by a week per change. — Source: [Example product study](https://example.com/feedback-loops)\n\n**R4.** The user's answers say QA is manual and takes two days, which supports R2 for this team. — Source: user's review (not independently verified)\n\n## Open questions\n\n1. How long does a release take your team today, start to finish?\n2. Do customers depend on fixes shipping within a week?\n3. Is release work done by one person or shared?\n",
+      "responseSource": "agent",
+      "wordCount": 116,
+      "signals": {},
+      "agent": {
+        "jobId": "job-example",
+        "provider": "pi",
+        "model": "local/example-model",
+        "startedAt": "2026-10-18T17:57:45.915Z",
+        "finishedAt": "2026-10-18T18:00:45.915Z",
+        "durationMs": 180000,
+        "toolCalls": 6,
+        "usage": {
+          "inputTokens": 12000,
+          "outputTokens": 900
+        }
+      },
+      "prompt": "# Session 01 — Researcher\n\nThis is round 2 of this investigation. The attached `round-1_*` files are the previous round's reports and the user's answers. Treat the user's answers as their scenario. Build on the earlier work: re-check disputed claims and close the gaps it left.\n\nDecision to investigate: Should our team move from weekly to biweekly releases?\nBackground: Six engineers, one web app, manual QA before each release.\n\nResearch this decision using reliable sources.\n\n**Output:** `01_research.md`, 500 words maximum, titled **Research Report**:\n1. Up to four numbered claims (R1, R2, …) for and against, each with a source link.\n2. A section titled **Open questions**: at most three numbered questions for the user whose answers would change the conclusion.",
+      "inputFiles": [
+        "round-1_01_research.md",
+        "round-1_02_check.md",
+        "round-1_review_answers.md"
+      ],
+      "inputsDigest": "4ea6946c",
+      "savedAt": "2026-10-18T18:00:45.915Z"
+    },
+    {
+      "id": "02",
+      "label": "Source Checker",
+      "kind": "ai",
+      "outputFile": "02_check.md",
+      "status": "done",
+      "response": "# Source Check\n\n| Claim | Result | Note |\n|---|---|---|\n| R1 | Supported | The survey reports smaller change sets for frequent releasers. |\n| R2 | Supported | Matches the post. |\n| R3 | Supported | Matches the study's summary. |\n\n## Gate result: Pass\n",
+      "responseSource": "agent",
+      "wordCount": 30,
+      "signals": {
+        "gate": "Pass"
+      },
+      "agent": {
+        "jobId": "job-example",
+        "provider": "pi",
+        "model": "local/example-model",
+        "startedAt": "2026-10-18T17:57:45.915Z",
+        "finishedAt": "2026-10-18T18:00:45.915Z",
+        "durationMs": 180000,
+        "toolCalls": 6,
+        "usage": {
+          "inputTokens": 12000,
+          "outputTokens": 900
+        }
+      },
+      "prompt": "# Session 02 — Source Checker\n\nFor each numbered claim in `01_research.md`, open its source and say whether the source supports it: Supported, Partly supported, or Not supported, with one sentence of explanation.\n\n**Output:** `02_check.md`, 400 words maximum, titled **Source Check**. End with a heading line in exactly this form: `## Gate result: Pass`, `## Gate result: Revise` or `## Gate result: Block`.",
+      "inputFiles": [
+        "01_research.md"
+      ],
+      "inputsDigest": "7d1ed6dd",
+      "savedAt": "2026-10-18T18:00:45.915Z"
+    },
+    {
+      "id": "review",
+      "label": "Your Review",
+      "kind": "human",
+      "outputFile": "review_answers.md",
+      "status": "done",
+      "response": "# Review: Should our team move from weekly to biweekly releases?\n\n## Answers to the open questions\n\nQuestions raised:\n1. How long does a release take your team today, start to finish?\n2. Do customers depend on fixes shipping within a week?\n3. Is release work done by one person or shared?\n\nAnswer:\n\nSame as round 1.\n\n## Additional context\n\n- We could automate part of QA next quarter.\n\n## Decision\n\n- [x] Get the recommendation\n- [ ] Run another round with this context\n- [ ] Pause\n- [ ] Stop here\n",
+      "fields": {
+        "answers": "Same as round 1.",
+        "notes": "We could automate part of QA next quarter.",
+        "next": "go"
+      },
+      "responseSource": "form",
+      "inputFiles": [
+        "01_research.md",
+        "02_check.md"
+      ],
+      "inputsDigest": "7b9d87bd",
+      "savedAt": "2026-10-18T18:00:45.915Z",
+      "wordCount": 85
+    },
+    {
+      "id": "03",
+      "label": "Recommender",
+      "kind": "ai",
+      "outputFile": "03_recommendation.md",
+      "status": "done",
+      "response": "# Recommendation\n\n**Current assessment.** Biweekly releases fit this team today: QA is manual and takes two days (R2, R4), and hotfixes ship separately, so slower feedback (R3) costs little. If QA automation lands, weekly releases become cheap again.\n\n**What changed.** The follow-up found that automation usually halves QA time, and your answer confirms hotfixes are independent of the cycle.\n\n**Suggested next action: Proceed conditionally** — move to biweekly now, and revisit once QA automation is in place.\n\n## Open questions\n\n1. When will the QA automation work be scheduled?\n",
+      "responseSource": "agent",
+      "wordCount": 88,
+      "signals": {
+        "action": "Proceed conditionally"
+      },
+      "agent": {
+        "jobId": "job-example",
+        "provider": "pi",
+        "model": "local/example-model",
+        "startedAt": "2026-10-18T17:57:45.915Z",
+        "finishedAt": "2026-10-18T18:00:45.915Z",
+        "durationMs": 180000,
+        "toolCalls": 6,
+        "usage": {
+          "inputTokens": 12000,
+          "outputTokens": 900
+        }
+      },
+      "prompt": "# Session 03 — Recommender\n\nWrite a short recommendation for: Should our team move from weekly to biweekly releases?\n\nUse only the attached files. Treat the user's answers in `review_answers.md` as their scenario, not as verified evidence, and mention any claims the source check did not support.\n\n**Follow-up:** An earlier version of this recommendation suggested investigating further. `follow-up_previous_*` is that earlier version, `follow-up_answers.md` holds what the user added, and `follow-up_research.md` (if present) holds research findings. Write an updated recommendation and say briefly what changed. Only suggest **Investigate further** again if more research could still settle a critical question; if what remains can only be answered by the user, suggest **Proceed conditionally** and state those answers as the conditions.\n\n**Output:** `03_recommendation.md`, 300 words maximum, titled **Recommendation**:\n- Current assessment (2–3 sentences)\n- **Suggested next action:** Proceed / Proceed conditionally / Investigate further / Do not proceed — with a brief reason\n- A section titled **Open questions**: at most three numbered questions that remain.",
+      "inputFiles": [
+        "01_research.md",
+        "02_check.md",
+        "review_answers.md",
+        "follow-up_previous_03_recommendation.md",
+        "follow-up_answers.md",
+        "follow-up_research.md"
+      ],
+      "inputsDigest": "5f5a9575",
+      "savedAt": "2026-10-18T18:00:45.915Z"
+    }
+  ],
+  "integrity": {
+    "algorithm": "sha256",
+    "contentHash": "sha256:66b44655fdd7b4943e7542b5dc125cca0b178718be222a0342a65759f275f5fe",
+    "computedAt": "2026-10-18T18:00:45.919Z"
+  },
+  "round": 2,
+  "roundStartedAt": "2026-10-18T18:00:45.881Z",
+  "carryOver": {
+    "files": [
+      {
+        "name": "round-1_01_research.md",
+        "content": "# Research Report\n\n**R1.** Teams that release more often tend to have smaller, lower-risk changes. — Source: [Example DevOps survey](https://example.com/devops-survey)\n\n**R2.** Biweekly releases reduce release overhead for teams with manual QA. — Source: [Example engineering blog](https://example.com/release-overhead)\n\n**R3.** Longer cycles can delay customer feedback by a week per change. — Source: [Example product study](https://example.com/feedback-loops)\n\n## Open questions\n\n1. How long does a release take your team today, start to finish?\n2. Do customers depend on fixes shipping within a week?\n3. Is release work done by one person or shared?\n",
+        "fromStepId": "01"
+      },
+      {
+        "name": "round-1_02_check.md",
+        "content": "# Source Check\n\n| Claim | Result | Note |\n|---|---|---|\n| R1 | Supported | The survey reports smaller change sets for frequent releasers. |\n| R2 | Partly supported | The post covers weekly vs monthly, not biweekly. |\n| R3 | Supported | Matches the study's summary. |\n\n## Gate result: Revise\n",
+        "fromStepId": "02"
+      },
+      {
+        "name": "round-1_review_answers.md",
+        "content": "# Review: Should our team move from weekly to biweekly releases?\n\n## Answers to the open questions\n\nQuestions raised:\n1. How long does a release take your team today, start to finish?\n2. Do customers depend on fixes shipping within a week?\n3. Is release work done by one person or shared?\n\nAnswer:\n\nA release takes about two days because QA is manual. Customers rarely need a fix within a week. One person runs each release.\n\n## Additional context\n\n- None\n\n## Decision\n\n- [ ] Get the recommendation\n- [x] Run another round with this context\n- [ ] Pause\n- [ ] Stop here\n",
+        "fromStepId": "review"
+      }
+    ],
+    "into": [
+      "01"
+    ]
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "startedAt": "2026-10-18T18:00:44.500Z",
+      "endedAt": "2026-10-18T18:00:45.881Z",
+      "steps": [
+        {
+          "id": "01",
+          "label": "Researcher",
+          "kind": "ai",
+          "outputFile": "01_research.md",
+          "status": "done",
+          "response": "# Research Report\n\n**R1.** Teams that release more often tend to have smaller, lower-risk changes. — Source: [Example DevOps survey](https://example.com/devops-survey)\n\n**R2.** Biweekly releases reduce release overhead for teams with manual QA. — Source: [Example engineering blog](https://example.com/release-overhead)\n\n**R3.** Longer cycles can delay customer feedback by a week per change. — Source: [Example product study](https://example.com/feedback-loops)\n\n## Open questions\n\n1. How long does a release take your team today, start to finish?\n2. Do customers depend on fixes shipping within a week?\n3. Is release work done by one person or shared?\n",
+          "responseSource": "agent",
+          "wordCount": 91,
+          "signals": {},
+          "agent": {
+            "jobId": "job-example",
+            "provider": "pi",
+            "model": "local/example-model",
+            "startedAt": "2026-10-18T17:57:45.174Z",
+            "finishedAt": "2026-10-18T18:00:45.174Z",
+            "durationMs": 180000,
+            "toolCalls": 6,
+            "usage": {
+              "inputTokens": 12000,
+              "outputTokens": 900
+            }
+          },
+          "prompt": "# Session 01 — Researcher\n\nDecision to investigate: Should our team move from weekly to biweekly releases?\nBackground: Six engineers, one web app, manual QA before each release.\n\nResearch this decision using reliable sources.\n\n**Output:** `01_research.md`, 500 words maximum, titled **Research Report**:\n1. Up to four numbered claims (R1, R2, …) for and against, each with a source link.\n2. A section titled **Open questions**: at most three numbered questions for the user whose answers would change the conclusion.",
+          "inputFiles": [],
+          "inputsDigest": "76ed19fb",
+          "savedAt": "2026-10-18T18:00:45.174Z"
+        },
+        {
+          "id": "02",
+          "label": "Source Checker",
+          "kind": "ai",
+          "outputFile": "02_check.md",
+          "status": "done",
+          "response": "# Source Check\n\n| Claim | Result | Note |\n|---|---|---|\n| R1 | Supported | The survey reports smaller change sets for frequent releasers. |\n| R2 | Partly supported | The post covers weekly vs monthly, not biweekly. |\n| R3 | Supported | Matches the study's summary. |\n\n## Gate result: Revise\n",
+          "responseSource": "agent",
+          "wordCount": 36,
+          "signals": {
+            "gate": "Revise"
+          },
+          "agent": {
+            "jobId": "job-example",
+            "provider": "pi",
+            "model": "local/example-model",
+            "startedAt": "2026-10-18T17:57:45.175Z",
+            "finishedAt": "2026-10-18T18:00:45.175Z",
+            "durationMs": 180000,
+            "toolCalls": 6,
+            "usage": {
+              "inputTokens": 12000,
+              "outputTokens": 900
+            }
+          },
+          "prompt": "# Session 02 — Source Checker\n\nFor each numbered claim in `01_research.md`, open its source and say whether the source supports it: Supported, Partly supported, or Not supported, with one sentence of explanation.\n\n**Output:** `02_check.md`, 400 words maximum, titled **Source Check**. End with a heading line in exactly this form: `## Gate result: Pass`, `## Gate result: Revise` or `## Gate result: Block`.",
+          "inputFiles": [
+            "01_research.md"
+          ],
+          "inputsDigest": "8000f917",
+          "savedAt": "2026-10-18T18:00:45.175Z"
+        },
+        {
+          "id": "review",
+          "label": "Your Review",
+          "kind": "human",
+          "outputFile": "review_answers.md",
+          "status": "done",
+          "response": "# Review: Should our team move from weekly to biweekly releases?\n\n## Answers to the open questions\n\nQuestions raised:\n1. How long does a release take your team today, start to finish?\n2. Do customers depend on fixes shipping within a week?\n3. Is release work done by one person or shared?\n\nAnswer:\n\nA release takes about two days because QA is manual. Customers rarely need a fix within a week. One person runs each release.\n\n## Additional context\n\n- None\n\n## Decision\n\n- [ ] Get the recommendation\n- [x] Run another round with this context\n- [ ] Pause\n- [ ] Stop here\n",
+          "fields": {
+            "answers": "A release takes about two days because QA is manual. Customers rarely need a fix within a week. One person runs each release.",
+            "notes": "",
+            "next": "again"
+          },
+          "responseSource": "form",
+          "inputFiles": [
+            "01_research.md",
+            "02_check.md"
+          ],
+          "inputsDigest": "6fb8c66b",
+          "savedAt": "2026-10-18T18:00:45.176Z",
+          "wordCount": 97
+        },
+        {
+          "id": "03",
+          "label": "Recommender",
+          "kind": "ai",
+          "outputFile": "03_recommendation.md",
+          "status": "skipped",
+          "response": ""
+        }
+      ]
+    }
+  ],
+  "followUps": [
+    {
+      "n": 1,
+      "kind": "research",
+      "stepId": "03",
+      "createdAt": "2026-10-18T18:00:45.915Z",
+      "questions": [
+        "How much of QA could realistically be automated next quarter?",
+        "Would a biweekly cycle change how hotfixes are shipped?"
+      ],
+      "answers": "Hotfixes would still ship the same day, outside the release cycle.",
+      "previous": "# Recommendation\n\n**Current assessment.** Biweekly releases would likely cut release overhead for this team, because QA is manual and takes two days (R2, R4). The cost is slower feedback (R3), which matters less since customers rarely need fast fixes.\n\n**Suggested next action: Investigate further** — the decision depends on how much QA can be automated, which the record doesn't settle.\n\n## Open questions\n\n1. How much of QA could realistically be automated next quarter?\n2. Would a biweekly cycle change how hotfixes are shipped?\n",
+      "status": "done",
+      "research": "# Follow-up Research\n\n**1. QA automation.** Teams that automate regression tests typically cut manual QA time by half or more within a few months. — Source: [Example testing report](https://example.com/qa-automation). Confidence: medium.\n\n**2. Hotfixes.** The user's answer (same-day hotfixes outside the cycle) is their stated process, not verified.\n\n## What this changes\n\nPartial automation would shorten releases, which weakens the overhead argument for biweekly releases over time.\n",
+      "agent": {
+        "jobId": "job-example",
+        "provider": "pi",
+        "model": "local/example-model",
+        "startedAt": "2026-10-18T17:58:45.915Z",
+        "finishedAt": "2026-10-18T18:00:45.915Z",
+        "durationMs": 120000,
+        "toolCalls": 4,
+        "usage": {
+          "inputTokens": 12000,
+          "outputTokens": 900
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:workflow-runner:schema:workflow-run:1",
+  "title": "Workflow Runner run file (workflow-run, formatVersion 1)",
+  "description": "One investigation: the embedded workflow, setup answers, every step's output, earlier rounds, follow-ups and integrity hashes. See docs/run-format.md. Unknown properties are allowed; newer app versions may add fields.",
+  "type": "object",
+  "required": ["format", "id", "title", "tag", "status", "createdAt", "updatedAt", "variables", "template", "position", "progress", "steps"],
+  "properties": {
+    "format": { "const": "workflow-run" },
+    "formatVersion": { "const": 1 },
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{0,80}$" },
+    "title": { "type": "string" },
+    "tag": { "type": "string", "description": "<workflow id>@<version>#<first 8 hex of template.hash>" },
+    "status": { "enum": ["setup", "in_progress", "paused", "stopped", "completed"] },
+    "createdAt": { "$ref": "#/$defs/time" },
+    "updatedAt": { "$ref": "#/$defs/time" },
+    "completedAt": { "anyOf": [{ "$ref": "#/$defs/time" }, { "type": "null" }] },
+    "variables": { "type": "object", "additionalProperties": { "type": "string" } },
+    "template": {
+      "type": "object",
+      "required": ["id", "title", "version", "hash", "definition"],
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "version": { "type": "string" },
+        "sourceFile": { "type": "string" },
+        "hash": { "$ref": "#/$defs/sha256" },
+        "definition": { "$ref": "urn:workflow-runner:schema:workflow-template:1" }
+      }
+    },
+    "position": { "type": "integer", "minimum": 0 },
+    "progress": {
+      "type": "object",
+      "required": ["completed", "total"],
+      "properties": { "completed": { "type": "integer", "minimum": 0 }, "total": { "type": "integer", "minimum": 0 } }
+    },
+    "steps": { "type": "array", "items": { "$ref": "#/$defs/runStep" }, "description": "The current round, in workflow order." },
+    "agentBreakpoints": { "type": "array", "items": { "type": "string" } },
+    "round": { "type": "integer", "minimum": 1, "description": "Current round; missing means 1." },
+    "roundStartedAt": { "$ref": "#/$defs/time" },
+    "carryOver": { "$ref": "#/$defs/carryOver" },
+    "rounds": { "type": "array", "items": { "$ref": "#/$defs/pastRound" }, "description": "Earlier rounds, oldest first." },
+    "followUps": { "type": "array", "items": { "$ref": "#/$defs/followUp" } },
+    "integrity": {
+      "type": "object",
+      "required": ["algorithm", "contentHash"],
+      "properties": {
+        "algorithm": { "const": "sha256" },
+        "contentHash": { "$ref": "#/$defs/sha256" },
+        "computedAt": { "$ref": "#/$defs/time" }
+      }
+    },
+    "importVerification": {
+      "type": "object",
+      "properties": {
+        "templateHashOk": { "type": "boolean" },
+        "contentHashOk": { "type": ["boolean", "null"] },
+        "importedAt": { "$ref": "#/$defs/time" },
+        "sourceFile": { "type": "string" }
+      }
+    }
+  },
+  "$defs": {
+    "time": { "type": "string", "description": "ISO 8601 timestamp (UTC)." },
+    "sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "agentRun": {
+      "type": "object",
+      "required": ["jobId", "provider", "model", "startedAt", "finishedAt", "durationMs", "toolCalls"],
+      "properties": {
+        "jobId": { "type": "string" },
+        "provider": { "enum": ["claude", "codex", "pi"] },
+        "model": { "type": "string" },
+        "sessionId": { "type": "string" },
+        "startedAt": { "$ref": "#/$defs/time" },
+        "finishedAt": { "$ref": "#/$defs/time" },
+        "durationMs": { "type": "integer", "minimum": 0 },
+        "toolCalls": { "type": "integer", "minimum": 0 },
+        "usage": {
+          "type": "object",
+          "properties": { "inputTokens": { "type": "integer" }, "outputTokens": { "type": "integer" } }
+        },
+        "trimmed": { "type": "boolean" }
+      }
+    },
+    "fieldValue": {
+      "anyOf": [
+        { "type": "string" },
+        {
+          "type": "object",
+          "required": ["questions", "answers"],
+          "properties": {
+            "questions": { "type": "array", "items": { "type": "string" } },
+            "answers": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      ]
+    },
+    "runStep": {
+      "type": "object",
+      "required": ["id", "label", "kind", "outputFile", "status", "response"],
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "kind": { "enum": ["ai", "human"] },
+        "outputFile": { "type": "string" },
+        "status": { "enum": ["pending", "done", "skipped"] },
+        "response": { "type": "string", "description": "Markdown output; empty until done." },
+        "responseSource": { "enum": ["paste", "upload", "form", "agent"] },
+        "uploadedFileName": { "type": "string" },
+        "prompt": { "type": "string" },
+        "promptOverride": { "type": "string" },
+        "includedOptional": { "type": "array", "items": { "type": "string" } },
+        "inputFiles": { "type": "array", "items": { "type": "string" } },
+        "inputsDigest": { "type": "string", "pattern": "^[0-9a-f]{8}$" },
+        "signals": { "type": "object", "additionalProperties": { "type": "string" } },
+        "wordCount": { "type": "integer", "minimum": 0 },
+        "fields": { "type": "object", "additionalProperties": { "$ref": "#/$defs/fieldValue" } },
+        "checklist": { "type": "array", "items": { "type": "boolean" } },
+        "savedAt": { "$ref": "#/$defs/time" },
+        "editedAt": { "$ref": "#/$defs/time" },
+        "agent": { "$ref": "#/$defs/agentRun" },
+        "followUpClosed": { "type": "boolean" }
+      }
+    },
+    "carryOver": {
+      "type": "object",
+      "required": ["files", "into"],
+      "properties": {
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "content", "fromStepId"],
+            "properties": { "name": { "type": "string" }, "content": { "type": "string" }, "fromStepId": { "type": "string" } }
+          }
+        },
+        "into": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "followUp": {
+      "type": "object",
+      "required": ["n", "stepId", "createdAt", "questions", "answers", "previous", "status"],
+      "properties": {
+        "n": { "type": "integer", "minimum": 1 },
+        "kind": { "enum": ["research", "answers"], "description": "Missing means research." },
+        "stepId": { "type": "string" },
+        "createdAt": { "$ref": "#/$defs/time" },
+        "questions": { "type": "array", "items": { "type": "string" } },
+        "answers": { "type": "string" },
+        "previous": { "type": "string" },
+        "status": { "enum": ["running", "done", "failed"] },
+        "research": { "type": "string" },
+        "agent": { "$ref": "#/$defs/agentRun" }
+      }
+    },
+    "pastRound": {
+      "type": "object",
+      "required": ["round", "startedAt", "endedAt", "steps"],
+      "properties": {
+        "round": { "type": "integer", "minimum": 1 },
+        "startedAt": { "$ref": "#/$defs/time" },
+        "endedAt": { "$ref": "#/$defs/time" },
+        "carryOver": { "$ref": "#/$defs/carryOver" },
+        "steps": { "type": "array", "items": { "$ref": "#/$defs/runStep" } },
+        "followUps": { "type": "array", "items": { "$ref": "#/$defs/followUp" } }
+      }
+    }
+  }
+}

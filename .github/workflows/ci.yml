@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run typecheck
+
+      - run: npm run build
+
+      - name: Prompt bundles are up to date
+        run: |
+          npm run bundles
+          git diff --exit-code -- bundles
+          test -z "$(git status --porcelain -- bundles)"
+
+      - name: Validate JSON against schemas
+        run: |
+          set -euo pipefail
+          npm i --no-save ajv-cli@5 ajv-formats@3
+          npx --yes ajv-cli@5 validate --spec=draft2020 --strict=false -c ajv-formats -s docs/schemas/workflow-template.schema.json -d "templates/*.json" -d docs/examples/example-workflow.json
+          npx --yes ajv-cli@5 validate --spec=draft2020 --strict=false -c ajv-formats -s docs/schemas/workflow-run.schema.json -r docs/schemas/workflow-template.schema.json -d docs/examples/example-run.run.json
+          if compgen -G "samples/runs/*.json" > /dev/null; then npx --yes ajv-cli@5 validate --spec=draft2020 --strict=false -c ajv-formats -s docs/schemas/workflow-run.schema.json -r docs/schemas/workflow-template.schema.json -d "samples/runs/*.json"; fi
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: python -I docs/examples/parse_run.py docs/examples/example-run.run.json

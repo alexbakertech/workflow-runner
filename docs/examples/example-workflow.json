@@ -1,0 +1,127 @@
+{
+  "format": "workflow-template",
+  "formatVersion": 1,
+  "id": "release-cadence",
+  "title": "Release Cadence Review",
+  "version": "1.0.0",
+  "description": "A small example workflow: research a decision, check the sources, review the findings yourself, then get a recommendation. Shows every feature of the workflow format.",
+  "intro": [
+    "Session 01 researches the decision and lists open questions for you.",
+    "Session 02 checks that the cited sources say what the research claims.",
+    "You review both, answer the questions, and choose to continue, run another round, pause or stop.",
+    "Session 03 writes a short recommendation. If it says to investigate further, you can do a quick follow-up or a new round."
+  ],
+  "titleVariable": "question",
+  "variables": [
+    {
+      "key": "question",
+      "label": "Decision to investigate",
+      "help": "One sentence, phrased as a question.",
+      "placeholder": "Should our team move from weekly to biweekly releases?",
+      "required": true,
+      "multiline": true
+    },
+    {
+      "key": "context",
+      "label": "Background (optional)",
+      "help": "Team size, product, constraints. Leave blank if none.",
+      "multiline": true
+    }
+  ],
+  "steps": [
+    {
+      "id": "01",
+      "label": "Researcher",
+      "kind": "ai",
+      "description": "Researches the decision and lists the strongest arguments on each side, with sources.",
+      "inputs": [],
+      "prompt": "# Session 01 — Researcher\n\n{{#priorRound}}This is round {{round}} of this investigation. The attached `round-{{prevRound}}_*` files are the previous round's reports and the user's answers. Treat the user's answers as their scenario. Build on the earlier work: re-check disputed claims and close the gaps it left.\n\n{{/priorRound}}Decision to investigate: {{question}}\n{{#context}}Background: {{context}}\n{{/context}}\nResearch this decision using reliable sources.\n\n**Output:** `01_research.md`, 500 words maximum, titled **Research Report**:\n1. Up to four numbered claims (R1, R2, …) for and against, each with a source link.\n2. A section titled **Open questions**: at most three numbered questions for the user whose answers would change the conclusion.",
+      "output": { "file": "01_research.md", "title": "Research report" },
+      "wordLimit": 500,
+      "checklist": ["Every claim has a source link", "Ends with open questions"]
+    },
+    {
+      "id": "02",
+      "label": "Source Checker",
+      "kind": "ai",
+      "description": "Checks each numbered claim against its source.",
+      "inputs": ["01_research.md"],
+      "prompt": "# Session 02 — Source Checker\n\nFor each numbered claim in `01_research.md`, open its source and say whether the source supports it: Supported, Partly supported, or Not supported, with one sentence of explanation.\n\n**Output:** `02_check.md`, 400 words maximum, titled **Source Check**. End with a heading line in exactly this form: `## Gate result: Pass`, `## Gate result: Revise` or `## Gate result: Block`.",
+      "output": { "file": "02_check.md", "title": "Source check" },
+      "wordLimit": 400,
+      "signals": [
+        {
+          "key": "gate",
+          "label": "Source gate",
+          "match": "gate",
+          "options": ["Pass", "Revise", "Block"],
+          "warnOn": ["Revise", "Block"],
+          "warning": "The checker flagged claims in the research. Correct them and run the check again, or continue and carry the flag forward.",
+          "fix": { "step": "01", "on": ["Revise"] }
+        }
+      ]
+    },
+    {
+      "id": "review",
+      "label": "Your Review",
+      "kind": "human",
+      "description": "Read the research and the source check, answer the open questions, and decide what happens next.",
+      "inputs": ["01", "02"],
+      "output": { "file": "review_answers.md", "title": "Your review" },
+      "fields": [
+        {
+          "key": "answers",
+          "type": "text",
+          "label": "Your answers",
+          "help": "Answer whichever questions apply, in any order.",
+          "placeholder": "Answer the questions above, and add anything else relevant.",
+          "questionsFrom": "01"
+        },
+        {
+          "key": "notes",
+          "type": "text",
+          "label": "Additional context or corrections",
+          "placeholder": "Constraints, facts the research missed… or leave blank."
+        },
+        {
+          "key": "next",
+          "type": "decision",
+          "label": "What would you like to do?",
+          "options": [
+            { "value": "go", "label": "Get the recommendation", "description": "Continue to Session 03.", "effect": "continue" },
+            {
+              "value": "again",
+              "label": "Run another round with this context",
+              "description": "Back to Session 01 with everything from this round as input.",
+              "effect": "loop",
+              "carryInto": ["01"]
+            },
+            { "value": "pause", "label": "Pause", "description": "Come back to this run later.", "effect": "pause" },
+            { "value": "stop", "label": "Stop here", "description": "End the run; the summary shows what was gathered.", "effect": "stop" }
+          ]
+        }
+      ],
+      "outputTemplate": "# Review: {{question}}\n\n## Answers to the open questions\n\n{{answers}}\n\n## Additional context\n\n{{notes}}\n\n## Decision\n\n{{next}}"
+    },
+    {
+      "id": "03",
+      "label": "Recommender",
+      "kind": "ai",
+      "description": "Combines the research, the source check and your answers into a short recommendation.",
+      "inputs": ["01", "02", "review"],
+      "prompt": "# Session 03 — Recommender\n\nWrite a short recommendation for: {{question}}\n\nUse only the attached files. Treat the user's answers in `review_answers.md` as their scenario, not as verified evidence, and mention any claims the source check did not support.{{#followUp}}\n\n**Follow-up:** An earlier version of this recommendation suggested investigating further. `follow-up_previous_*` is that earlier version, `follow-up_answers.md` holds what the user added, and `follow-up_research.md` (if present) holds research findings. Write an updated recommendation and say briefly what changed. Only suggest **Investigate further** again if more research could still settle a critical question; if what remains can only be answered by the user, suggest **Proceed conditionally** and state those answers as the conditions.{{/followUp}}\n\n**Output:** `03_recommendation.md`, 300 words maximum, titled **Recommendation**:\n- Current assessment (2–3 sentences)\n- **Suggested next action:** Proceed / Proceed conditionally / Investigate further / Do not proceed — with a brief reason\n- A section titled **Open questions**: at most three numbered questions that remain.",
+      "output": { "file": "03_recommendation.md", "title": "Recommendation" },
+      "wordLimit": 300,
+      "feature": true,
+      "signals": [
+        {
+          "key": "action",
+          "label": "Suggested next action",
+          "match": "next action",
+          "options": ["Proceed", "Proceed conditionally", "Investigate further", "Do not proceed"],
+          "followUp": ["Investigate further"]
+        }
+      ]
+    }
+  ]
+}

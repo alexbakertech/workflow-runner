@@ -1,0 +1,619 @@
+{
+  "format": "workflow-run",
+  "formatVersion": 1,
+  "id": "run-mwie8uk7-7ak3",
+  "title": "Monorepo for a small team?",
+  "tag": "adversarial-research@3.6.1#2f591b94",
+  "status": "completed",
+  "createdAt": "2026-11-15T22:16:03.511Z",
+  "updatedAt": "2026-11-15T22:22:06.267Z",
+  "completedAt": "2026-11-15T22:22:06.257Z",
+  "variables": {
+    "question": "Should a five-person software team adopt a monorepo?",
+    "scope": "Five developers maintain three web services and one shared library in separate repositories, with GitHub Actions CI. No dedicated platform team."
+  },
+  "template": {
+    "id": "adversarial-research",
+    "title": "Independent Adversarial Research",
+    "version": "3.6.1",
+    "sourceFile": "adversarial-research-v3.json",
+    "hash": "sha256:2f591b9411ba9c7e110cacc5a81834cd485d85d16b3ca61dd5288b3923b9cada",
+    "definition": {
+      "format": "workflow-template",
+      "formatVersion": 1,
+      "id": "adversarial-research",
+      "title": "Independent Adversarial Research",
+      "version": "3.6.1",
+      "description": "Seven isolated AI sessions plus one human review. A researcher argues for the decision, a critic argues against it, two verifiers check that cited sources say what is claimed, and a final session combines everything with your own answers into a short decision brief. If the first pass leaves too many gaps, you can run another round that builds on it.",
+      "intro": [
+        "Every session happens in a brand-new chat. Use any AI tool you like (ChatGPT, Claude, Gemini…) and switch models between sessions if you want — just never continue a previous chat.",
+        "For each session this guide gives you two things to copy: the context (the reports produced by earlier sessions) and the prompt. Paste both into the new chat as one message and send it.",
+        "Copy the full reply back into this guide. It becomes the input for later sessions, so you never have to manage files yourself.",
+        "Verification sessions only check that sources say what was claimed — not that the claims are true. If a verifier asks for a revision, you decide whether to fix it first or carry the flag forward.",
+        "After Session 06 you review both summaries, answer their questions in your own words, and decide what happens next: get the decision brief, pause, stop, or run another round that starts again at Session 01 with everything gathered so far. Nothing here makes the decision for you."
+      ],
+      "titleVariable": "question",
+      "variables": [
+        {
+          "key": "question",
+          "label": "Decision to investigate",
+          "required": true,
+          "multiline": true,
+          "placeholder": "e.g. Is replacing a gas furnace with a heat pump worthwhile for a typical household?",
+          "help": "Phrase it as a decision you are considering, not a universal claim."
+        },
+        {
+          "key": "scope",
+          "label": "Scenario / constraints (optional)",
+          "multiline": true,
+          "placeholder": "e.g. Detached house in a cold-winter climate, planning to stay 10+ years, would pay upfront.",
+          "help": "Any baseline facts the researcher should assume. Leave blank to have it document assumptions and ask you later."
+        }
+      ],
+      "steps": [
+        {
+          "id": "01",
+          "label": "Independent Researcher",
+          "kind": "ai",
+          "description": "Researches the question and lists up to five potential benefits, each backed by numbered claims (R1, R2…) with source links.",
+          "inputs": [],
+          "prompt": "# Session 01 — Independent Researcher\n\n**Input:** Research question and any explicitly provided scenario constraints. Start a **fresh chat**.\n\nInvestigate this decision:\n\n> {{question}}{{#scope}}\n\nScenario constraints / scope supplied by the user:\n\n> {{scope}}{{/scope}}\n\n{{#priorRound}}This is **round {{round}}** of this investigation. The attached `round-{{prevRound}}_*` files are the previous round's reports, verifications, and the user's answers (including any decision brief, follow-up research, and answers to its open questions). Treat the user's answers and context as their scenario. Build on the earlier work rather than repeating it: re-check claims that were disputed, close the gaps and open questions it left, and look for evidence the earlier round missed. Don't ask the user questions they already answered.\n\n{{/priorRound}}Your goal is to identify **potential benefits** and the circumstances under which they may be achieved. Produce a self-contained report for independent review, not a definitive universal verdict.\n\n1. Prioritize **up to five** consequential benefits or advantages.\n2. Label supporting external factual claims **R1, R2, ...**, provide accessible, specific links and pinpoint source passages/sections where possible.\n3. Clearly distinguish directly sourced statements, assumptions, illustrative calculations, and user-dependent scenarios.\n4. Include major comparison boundaries (e.g., operating versus acquisition cost), plausible alternatives, and limitations without conducting the adversarial critic's job.\n5. Include **up to three questions** for the user whose answers could materially alter the expected benefits. Explain why each matters. Don't request answers in this chat.\n6. Don't invent user circumstances or claim to have inspected sources you cannot access. If a necessary external source is inaccessible, say so.\n\n**Output:** `01_research.md` with: question/scope; benefits and numbered claims; evidence/source links; illustrative calculations/assumptions; alternatives/boundaries; unresolved information and prioritized user questions; readiness for source verification.\n\nKeep the report focused rather than encyclopedic. Do not ask interactive follow-up questions.",
+          "output": {
+            "file": "01_research.md",
+            "title": "Research report"
+          },
+          "checklist": [
+            "The report actually addresses your question and scope",
+            "Claims are numbered R1, R2… with links you can open",
+            "Sourced facts are separated from assumptions and illustrative calculations",
+            "You opened one or two important links and they look relevant"
+          ]
+        },
+        {
+          "id": "02",
+          "label": "Research Source Verifier",
+          "kind": "ai",
+          "description": "Checks whether each cited source really says what the research report claims. It does not judge whether the decision is good.",
+          "inputs": [
+            "01"
+          ],
+          "prompt": "# Session 02 — Research Source Verifier\n\n**Input:** `01_research.md`. Start a **fresh chat**.\n\nYour **only** responsibility is **source-to-claim correspondence**: does each cited source actually say or substantiate what Report 01 attributes to it?\n\nFor each material claim R1, R2, etc.:\n- Open the cited source if possible and locate the relevant supporting material.\n- Identify any qualification, misquotation, wrong number, inaccessible citation, or unsupported leap in what is attributed to that source.\n- Classify **Supported / Partially Supported / Unsupported / Contradicted / Unverifiable**. These labels refer to correspondence, **not overall factual truth**.\n- Cite the specific passage/section you inspected; do not pretend to have accessed a blocked source.\n\n**Do not** decide whether the proposed choice is worthwhile, evaluate the study's underlying methodology, introduce new research, or audit the overall decision. If a claim is an expressly labeled scenario assumption rather than source-attributed fact, mark it out of scope.\n\n**Output:** `02_source_verification.md`: concise per-claim table (ID, result, source location, explanation), material discrepancies, and gate result **Pass / Revise / Block**. Request targeted correction rather than rewriting the original report. Do not ask the user questions.",
+          "output": {
+            "file": "02_source_verification.md",
+            "title": "Research source verification"
+          },
+          "checklist": [
+            "There is a per-claim table with a result for each R claim",
+            "The report ends with a gate result: Pass, Revise or Block",
+            "If any important claim is Unsupported or Contradicted, you have decided whether to correct Session 01 first"
+          ],
+          "signals": [
+            {
+              "key": "gate",
+              "label": "Source gate",
+              "match": "gate",
+              "options": [
+                "Pass",
+                "Revise",
+                "Block"
+              ],
+              "warnOn": [
+                "Revise",
+                "Block"
+              ],
+              "warning": "The verifier flagged citation problems. The workflow recommends going back to the authoring session (in its original chat), asking it for a targeted correction of the flagged claims, pasting the corrected report into that step, and then re-running this verification. You can also continue and carry the flag forward — later sessions are instructed to mention it.",
+              "fix": {
+                "step": "01",
+                "on": [
+                  "Revise"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "03",
+          "label": "Benefits Synthesizer",
+          "kind": "ai",
+          "description": "Condenses the research and its verification into a short, user-facing Benefits Summary with up to three questions for you.",
+          "inputs": [
+            "01",
+            "02"
+          ],
+          "prompt": "# Session 03 — Benefits Synthesizer\n\n**Input:** `01_research.md` and `02_source_verification.md`. Start a **fresh chat**.\n\nProduce a **user-facing benefits summary** using only the supplied reports. Do not add new evidence, exaggerate verification status, or make a final recommendation. A verifier's \"Supported\" label confirms source correspondence, not that the underlying claim is true in every setting.\n\n**Output:** `03_benefits_summary.md`, **300 words maximum**, titled **Benefits Summary**:\n1. Two-sentence opportunity overview.\n2. Up to five high-value potential benefits, each with conditions and claim IDs where useful.\n3. Critical evidence/source-correlation limitations, explicitly mentioning any material `Revise` or `Block` gate.\n4. **Up to three prioritized questions for the user**, each with a brief explanation of how the answer could change the expected benefit. Avoid cosmetic/background questions.\n\nDistinguish established source attribution from modeled or hypothetical upside. Do not ask for answers in this chat.",
+          "output": {
+            "file": "03_benefits_summary.md",
+            "title": "Benefits summary"
+          },
+          "wordLimit": 300,
+          "feature": true,
+          "checklist": [
+            "Titled “Benefits Summary” and roughly 300 words or fewer",
+            "Mentions the verifier’s gate result if it was Revise or Block",
+            "Ends with up to three questions for you"
+          ]
+        },
+        {
+          "id": "04",
+          "label": "Adversarial Critic",
+          "kind": "ai",
+          "description": "Independently challenges the benefits — hidden costs, risks, failure conditions and alternatives — as numbered objections (C1, C2…).",
+          "inputs": [
+            "01",
+            "02",
+            "03"
+          ],
+          "prompt": "# Session 04 — Independent Adversarial Critic\n\n**Input:** `01_research.md`, `02_source_verification.md`, `03_benefits_summary.md`. Start a **fresh chat**.\n\nIndependently challenge whether the **proposed benefits apply and are worth pursuing**. Your objective is not to force a \"no\" answer; it is to uncover material omissions, risks, hidden costs, alternative explanations, tradeoffs, and failure conditions.\n\n1. Prioritize **up to five** meaningful objections and label them **C1, C2, ...**.\n2. For each: name the affected benefit/claim, the concern, why it matters, when it applies, and whether it could alter the decision.\n3. Cite specific accessible evidence for **new external factual counterclaims**. Clearly mark **logical objections**, **hypothetical scenarios**, and **unverified conjectures** as such.\n4. Identify any well-supported benefits that remain persuasive; do not manufacture symmetrical opposition.\n5. Give **up to three questions for the user** that could materially change the severity/applicability of the cautions. Don't request answers in this chat.\n6. Respect the findings of the source verifier without assuming source correspondence proves the researcher's conclusion.\n\n**Output:** `04_critique.md`: concise numbered objections with supporting citations, surviving benefits, unresolved information, and prioritized user questions. Do **not** rewrite the original research or impose a final decision.",
+          "output": {
+            "file": "04_critique.md",
+            "title": "Adversarial critique"
+          },
+          "checklist": [
+            "Objections are numbered C1, C2… and are substantive, not cosmetic",
+            "New factual counterclaims have sources; logical objections are labeled as such",
+            "It names the benefits that still hold up"
+          ]
+        },
+        {
+          "id": "05",
+          "label": "Critique Source Verifier",
+          "kind": "ai",
+          "description": "Checks that the critic’s new factual counterclaims match their cited sources. Purely logical objections are marked Not Applicable.",
+          "inputs": [
+            "01",
+            "02",
+            "03",
+            "04"
+          ],
+          "prompt": "# Session 05 — Critique Source Verifier\n\n**Input:** `01_research.md`, `02_source_verification.md`, `03_benefits_summary.md`, `04_critique.md`. Start a **fresh chat**.\n\nYour **only** responsibility is to check **source-to-claim correspondence** for the **new factual counterclaims** the critic attributes to cited sources.\n\nFor each numbered objection C1, C2, etc.:\n- Identify any sourced external factual assertion and inspect the specific cited material where accessible.\n- Classify that correspondence **Supported / Partially Supported / Unsupported / Contradicted / Unverifiable**.\n- If an objection is purely logical, conditional, mathematical, or hypothetical with no attributed external source, classify source checking as **Not Applicable — Nonfactual**. This does **not** mean the objection is wrong.\n- State what section/passage was inspected and note blocked sources honestly.\n\n**Do not** adjudicate whether the critic wins, re-evaluate overall merit, or generate competing arguments. Do not expand into a general arithmetic/model audit.\n\n**Output:** `05_critique_verification.md`: compact objection-by-objection source correspondence table; material discrepancies; **Pass / Revise / Block** source gate. Request targeted evidence correction when needed. Do not ask interactive questions.",
+          "output": {
+            "file": "05_critique_verification.md",
+            "title": "Critique source verification"
+          },
+          "checklist": [
+            "There is a table covering each C objection",
+            "The report ends with a source gate: Pass, Revise or Block",
+            "If material citations failed, you have decided whether to correct Session 04 first"
+          ],
+          "signals": [
+            {
+              "key": "gate",
+              "label": "Source gate",
+              "match": "gate",
+              "options": [
+                "Pass",
+                "Revise",
+                "Block"
+              ],
+              "warnOn": [
+                "Revise",
+                "Block"
+              ],
+              "warning": "The verifier flagged citation problems. The workflow recommends going back to the authoring session (in its original chat), asking it for a targeted correction of the flagged claims, pasting the corrected report into that step, and then re-running this verification. You can also continue and carry the flag forward — later sessions are instructed to mention it.",
+              "fix": {
+                "step": "04",
+                "on": [
+                  "Revise"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "06",
+          "label": "Cautions Synthesizer",
+          "kind": "ai",
+          "description": "Condenses the critique and its verification into a short Cautions Summary with up to three more questions for you.",
+          "inputs": [
+            "01",
+            "02",
+            "03",
+            "04",
+            "05"
+          ],
+          "prompt": "# Session 06 — Cautions Synthesizer\n\n**Input:** All preceding five reports (`01_research.md` through `05_critique_verification.md`). Start a **fresh chat**.\n\nProduce the human-facing caution summary from the supplied record. Do not introduce new facts or treat an unsupported sourced objection as proven. A logical objection can matter even when source verification is not applicable.\n\n**Output:** `06_cautions_summary.md`, **300 words maximum**, titled **Cautions Summary**:\n1. Up to five high-consequence risks, pitfalls, or alternative considerations.\n2. For each, note which proposed benefit it changes, when it matters, and whether evidence was source-correlated, partly verified, unverifiable, or logically conditional (cite C IDs).\n3. Briefly distinguish genuine potential dealbreakers from manageable tradeoffs; do not force a negative outcome.\n4. Flag material verifier `Revise` or `Block` outcomes still outstanding.\n5. **Up to three prioritized questions for the user** whose answers would materially change the cautions. Avoid repeating questions from the Benefits Summary unless necessary; when unavoidable, consolidate them.\n\nNo definitive recommendation, new external research, or request for immediate conversational answers.",
+          "output": {
+            "file": "06_cautions_summary.md",
+            "title": "Cautions summary"
+          },
+          "wordLimit": 300,
+          "feature": true,
+          "checklist": [
+            "Titled “Cautions Summary” and roughly 300 words or fewer",
+            "Separates potential dealbreakers from manageable tradeoffs",
+            "Ends with up to three questions for you"
+          ]
+        },
+        {
+          "id": "gate",
+          "label": "Your Review",
+          "kind": "human",
+          "description": "Read both summaries, answer their questions in your own words, add any context, and decide what to do next. No AI is involved in this step.",
+          "inputs": [
+            "03",
+            "06"
+          ],
+          "output": {
+            "file": "user_responses.md",
+            "title": "Your responses"
+          },
+          "fields": [
+            {
+              "key": "bq",
+              "type": "text",
+              "label": "Benefits summary — your answers",
+              "questionsFrom": "03",
+              "placeholder": "Answer whichever questions apply, in any order, and add anything else relevant to the benefits.",
+              "help": "Write freely. Skipping a question is fine — the next session treats it as unknown."
+            },
+            {
+              "key": "cq",
+              "type": "text",
+              "label": "Cautions summary — your answers",
+              "questionsFrom": "06",
+              "placeholder": "Answer whichever questions apply, in any order, and add anything else relevant to the cautions.",
+              "help": "Write freely. Skipping a question is fine — the next session treats it as unknown."
+            },
+            {
+              "key": "ctx",
+              "type": "text",
+              "label": "Additional context or corrections",
+              "placeholder": "Constraints, existing equipment, budget, usage, preferences… or leave blank for none.",
+              "help": "Facts you add here are treated as your scenario, not as independently verified evidence."
+            },
+            {
+              "key": "auth",
+              "type": "decision",
+              "label": "What would you like to do?",
+              "options": [
+                {
+                  "value": "proceed",
+                  "label": "Proceed to Session 07",
+                  "description": "Get a conditional decision brief that combines both summaries with your answers.",
+                  "effect": "continue"
+                },
+                {
+                  "value": "loop",
+                  "label": "Run another round with this context",
+                  "description": "Continue this run with another round: back to Session 01 with everything from this round — the reports, verifications, and your answers — as input, so the new research builds on it instead of starting over. This round stays in the run and can be viewed from its summary.",
+                  "effect": "loop",
+                  "carryInto": [
+                    "01"
+                  ]
+                },
+                {
+                  "value": "pause",
+                  "label": "Pause",
+                  "description": "Stop here for now to clarify something or re-verify a claim. You can resume this run later.",
+                  "effect": "pause"
+                },
+                {
+                  "value": "stop",
+                  "label": "Stop the investigation",
+                  "description": "End the run here. The summary page will show everything gathered so far.",
+                  "effect": "stop"
+                }
+              ]
+            }
+          ],
+          "outputTemplate": "# Human Review — {{question}}\n\n## Benefits summary answers\n{{bq}}\n\n## Cautions summary answers\n{{cq}}\n\n## Additional context / corrections\n{{ctx}}\n\n## Authorization\n{{auth}}\n"
+        },
+        {
+          "id": "07",
+          "label": "Decision Synthesizer",
+          "kind": "ai",
+          "description": "Combines both perspectives with your answers into a short, conditional decision brief with a suggested next action.",
+          "inputs": [
+            "03",
+            "06",
+            "02",
+            "05",
+            "gate"
+          ],
+          "optionalInputs": [
+            "01",
+            "04"
+          ],
+          "prompt": "# Session 07 — User-Informed Decision Synthesizer\n\n**Input:** `03_benefits_summary.md`, `06_cautions_summary.md`, `02_source_verification.md`, `05_critique_verification.md`, and `user_responses.md`. Provide `01_research.md` and `04_critique.md` as well if claim-level context is needed. Start a **fresh chat**.\n\nYou are combining **two independently developed perspectives and the user's answers** into a brief, user-specific decision aid. The user has already reviewed the summaries and chosen to proceed.{{#followUp}}\n\n**Follow-up:** An earlier version of this brief recommended investigating further. Since then: `follow-up_previous_*` is the latest earlier version of this brief, `follow-up_answers.md` holds what the user added, and `follow-up_research.md` (if present) holds findings from research on its open questions. Write an updated brief that takes them into account, and say briefly what changed and why. Treat the user's answers as their stated scenario, not as independently verified evidence. Research findings count as sourced only where they cite a source.\n\nOnly recommend **Investigate further** again if more research could still settle a critical question. If what remains can only be answered by the user (their own quotes, bills, plans, approvals, or preferences), recommend **Proceed conditionally** or **Do not proceed** instead, and state those answers as the conditions.{{/followUp}}\n\n1. Explain which potential benefits apply or fail to apply based on supplied user context.\n2. Explain which cautions are applicable, reduced, increased, or still unresolved.\n3. Maintain the distinction between **verified source correspondence**, reasoned inference, scenario assumptions, and factual claims the user supplied but no independent source checked.\n4. Do not invent new research, silently treat user assertions as external verification, or assert certainty where source/reasoning gaps remain.\n5. If critical questions cannot be resolved with the record, recommend further investigation instead of deciding by fiat.\n6. Refer back to report IDs/claim IDs where it materially improves traceability.\n\n**Output:** `07_decision_brief.md`, **400 words maximum**, titled **User-Informed Decision Brief**:\n- Current assessment (2–3 sentences)\n- Relevant benefits and their conditions\n- Relevant cautions and remaining uncertainties\n- **Suggested next action:** Proceed / Proceed conditionally / Investigate further / Do not proceed — with brief rationale\n- At most three material unanswered questions\n\nThis is **decision support**. The human remains the final decision-maker. Do not launch another iteration or ask interactive questions.",
+          "output": {
+            "file": "07_decision_brief.md",
+            "title": "Decision brief"
+          },
+          "wordLimit": 400,
+          "feature": true,
+          "checklist": [
+            "Titled “User-Informed Decision Brief” and roughly 400 words or fewer",
+            "Gives a suggested next action with a rationale",
+            "Your own facts are not presented as independently verified"
+          ],
+          "signals": [
+            {
+              "key": "action",
+              "label": "Suggested next action",
+              "match": "next action",
+              "options": [
+                "Proceed conditionally",
+                "Investigate further",
+                "Do not proceed",
+                "Proceed"
+              ],
+              "followUp": [
+                "Investigate further"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "position": 7,
+  "progress": {
+    "completed": 8,
+    "total": 8
+  },
+  "steps": [
+    {
+      "id": "01",
+      "label": "Independent Researcher",
+      "kind": "ai",
+      "outputFile": "01_research.md",
+      "status": "done",
+      "response": "## Question and scope\n\n**Should a five-person software team adopt a monorepo?**\n\nThe supplied facts are that five developers maintain three web services and one shared library in separate repositories, use GitHub Actions for CI, and have no dedicated platform team. The languages, dependency tooling, deployment practices, access requirements, change frequency, and current costs are unknown.\n\nFor this report, a **monorepo** means placing the four codebases in one Git repository. It does not imply a single deployable application or a requirement to release the services together.\n\nThe strongest potential case is easier coordination when library and service changes frequently need to move together. The expected benefit depends on the current frequency and cost of those changes, and on whether the team can keep CI and releases manageable. The evidence below supports mechanisms and GitHub capabilities; it does not establish that this particular team would save time or improve reliability.\n\n## Prioritized potential benefits\n\n### 1. Coordinated library and service changes\n\nA developer could change the shared library and affected services in one branch and pull request. Reviewers could see the proposed changes together, and one merge could put those source changes on the target branch together. This can reduce coordination and intermediate compatibility work when a library change requires simultaneous consumer changes.\n\n**Conditions for benefit:** Such changes occur often enough to matter; the services can build against the library version in the same checkout; and reviewers can assess the combined change. A monorepo does not itself make production deployments atomic: independently deployed services may still need backward-compatible APIs, staged rollouts, and rollback plans.\n\n**Basis:** This is an inference from the proposed repository structure and Git’s repository-level commits, rather than a measured outcome for the team. GitHub’s code-owner and review mechanisms can help route a combined change to relevant reviewers [R1].\n\n### 2. Earlier consumer compatibility feedback\n\nA pull request changing the shared library could run tests for each affected service against the proposed library change before merge. A single checkout and common CI configuration can make the relationship easier to express and inspect.\n\n**Conditions for benefit:** The relevant service tests exist, exercise the integration, and actually run for library changes. The team must identify affected consumers correctly and maintain test duration. This approach can also be implemented across separate repositories, but it requires arranging the appropriate checkouts, credentials, and versions.\n\n**Basis:** GitHub Actions supports workflows triggered by changed paths [R2]. That capability helps select work but does not automatically discover a dependency graph or prove compatibility. A shared-library change must trigger the relevant consumer checks.\n\n### 3. Less repeated repository and CI maintenance\n\nOne repository can provide a common place for contribution instructions, automation, and repository settings. A shared workflow or script can be updated alongside the code that uses it. For a team without platform specialists, fewer independently maintained configurations may be valuable if the current configurations have drifted or need frequent parallel edits.\n\n**Conditions for benefit:** The services have enough common workflow to share, and the resulting configuration stays understandable. A single repository may still need distinct service jobs, secrets, environments, and deployment policies. GitHub also supports reusable workflows across repositories [R3], so deduplication alone is not a decisive reason to migrate.\n\n### 4. Easier cross-service discovery and refactoring\n\nA single checkout can make it more convenient to search the services and shared library together, trace use of an interface, and propose a coordinated rename or refactor in one review.\n\n**Conditions for benefit:** Developers routinely work across these codebases and can use suitable language-aware tools. Search results alone do not prove that all runtime consumers or external clients have been found. This benefit is smaller if the services are largely independent or developers already use an effective multi-repository workspace.\n\n## Evidence and source links\n\nThe following are **directly sourced external claims**. The benefits above are conditional interpretations, not outcomes measured by these sources.\n\n- **R1 — Review routing:** GitHub says a `CODEOWNERS` file identifies owners for files or directories and can automatically request their review. Branch protection can require code-owner approval, subject to GitHub’s access and plan conditions. See [GitHub Docs, “About code owners,” especially “CODEOWNERS and branch protection”](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners).\n\n- **R2 — Path-filtered CI and its limitation:** GitHub Actions supports `paths` and `paths-ignore` filters. GitHub also says a required check associated with a workflow skipped by path filtering can remain pending and block a pull request. See [GitHub Docs, “Workflow syntax,” sections on path filters and Git diff comparisons](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax). A selective-CI design needs to handle required checks deliberately.\n\n- **R3 — Cross-repository CI reuse:** GitHub supports reusable workflows both within a repository and across accessible repositories; access policies and Actions permissions apply. See [GitHub Docs, “Reusing workflow configurations,” especially “Access to reusable workflows”](https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workflow-configurations).\n\n- **R4 — Repository access boundary:** GitHub documents granting teams access and permission levels at the repository level. See [GitHub Docs, “Managing team access to an organization repository”](https://docs.github.com/en/organizations/managing-user-access-to-your-organizations-repositories/managing-repository-roles/managing-team-access-to-an-organization-repository). Consolidation therefore warrants checking whether everyone who needs repository access may see all four codebases; `CODEOWNERS` review routing should not be treated as a substitute for a read-access boundary.\n\n## Illustrative calculation and assumptions\n\nThis is an **illustration, not an estimate of the team’s actual savings**:\n\n- Suppose there are four coordinated library-and-service changes per month.\n- Suppose a monorepo saves 30 minutes of developer coordination per change compared with the best practical separate-repository workflow.\n- Gross recurring saving: **4 × 0.5 = 2 developer-hours per month**.\n- If migration and initial CI work take 40 developer-hours, and extra ongoing monorepo maintenance takes 0.5 hour per month, the simple payback is **40 ÷ (2 − 0.5) ≈ 27 months**.\n\nThe assumptions are hypothetical. The calculation excludes benefits that are difficult to value, such as avoided defects, and costs such as disrupted work, retraining, and future tooling changes. If the recurring net saving is zero or negative, there is no time-based payback under this model. Calendar lead time and developer effort should be measured separately.\n\n## Alternatives and comparison boundaries\n\n- **Keep separate repositories and improve CI reuse.** Reusable GitHub Actions workflows [R3], common scripts, and consistent templates can address duplicated configuration while preserving repository-level access boundaries.\n- **Keep separate repositories and improve integration checks.** Test proposed library versions against consumers through a coordinated multi-checkout CI workflow or published prerelease package. This preserves independent repositories while targeting compatibility feedback.\n- **Use a partial monorepo.** Move the shared library and the service or services most frequently changed with it together, if the actual dependency pattern supports that choice.\n- **Compare acquisition and operation separately.** Migration includes repository history and links, CI, secrets, permissions, deployment pipelines, documentation, and team adjustment. Ongoing operation includes CI minutes and wait time, maintenance of change detection, review effort, release coordination, and incident recovery. Compare these against improvements to the existing setup, not only its current state.\n- **Preserve release and access boundaries deliberately.** One source repository can still support independent releases, but that must be designed and tested. If codebases require different read access, a single repository may be unsuitable [R4]. Selective CI also introduces configuration work and required-check considerations [R2].\n\n## Unresolved information and prioritized user questions\n\nThese questions are for subsequent review; answers were not requested in this session.\n\n1. **How often do changes span the shared library and one or more services, and how much developer effort and elapsed time do they currently take?** This determines the likely size of the main coordination and integration benefit.\n2. **How are the services built, tested, versioned, and deployed today, including their languages and how they consume the library?** This determines whether a single checkout can test proposed changes effectively and what CI and release work migration would require.\n3. **Do any codebases require different read access, ownership, or release controls, and what current CI and repository maintenance burden does the team experience?** Access constraints could rule out full consolidation, while the current burden determines how much shared administration could realistically save.\n\n## Readiness for source verification\n\nThe linked GitHub documentation was accessible through web search and provides specific sections for independent checking. Claims R1–R4 describe documented capabilities and constraints; the benefit rankings, causal interpretations, and calculation remain hypotheses for this team. No team repositories, workflows, usage data, or deployment systems were inspected. Verify GitHub plan and configuration applicability and gather the unresolved team-specific information before making an adoption decision.",
+      "responseSource": "agent",
+      "wordCount": 1420,
+      "signals": {},
+      "agent": {
+        "jobId": "job-mwie8uky-x3q4",
+        "provider": "codex",
+        "model": "gpt-6.1-terra",
+        "sessionId": "01a1e148-2325-7371-8023-0d9fa4762f97",
+        "startedAt": "2026-11-15T22:16:03.538Z",
+        "finishedAt": "2026-11-15T22:16:49.769Z",
+        "durationMs": 46231,
+        "toolCalls": 2,
+        "usage": {
+          "inputTokens": 70692,
+          "outputTokens": 2134
+        },
+        "trimmed": true
+      },
+      "prompt": "# Session 01 — Independent Researcher\n\n**Input:** Research question and any explicitly provided scenario constraints. Start a **fresh chat**.\n\nInvestigate this decision:\n\n> Should a five-person software team adopt a monorepo?\n\nScenario constraints / scope supplied by the user:\n\n> Five developers maintain three web services and one shared library in separate repositories, with GitHub Actions CI. No dedicated platform team.\n\nYour goal is to identify **potential benefits** and the circumstances under which they may be achieved. Produce a self-contained report for independent review, not a definitive universal verdict.\n\n1. Prioritize **up to five** consequential benefits or advantages.\n2. Label supporting external factual claims **R1, R2, ...**, provide accessible, specific links and pinpoint source passages/sections where possible.\n3. Clearly distinguish directly sourced statements, assumptions, illustrative calculations, and user-dependent scenarios.\n4. Include major comparison boundaries (e.g., operating versus acquisition cost), plausible alternatives, and limitations without conducting the adversarial critic's job.\n5. Include **up to three questions** for the user whose answers could materially alter the expected benefits. Explain why each matters. Don't request answers in this chat.\n6. Don't invent user circumstances or claim to have inspected sources you cannot access. If a necessary external source is inaccessible, say so.\n\n**Output:** `01_research.md` with: question/scope; benefits and numbered claims; evidence/source links; illustrative calculations/assumptions; alternatives/boundaries; unresolved information and prioritized user questions; readiness for source verification.\n\nKeep the report focused rather than encyclopedic. Do not ask interactive follow-up questions.",
+      "inputFiles": [],
+      "inputsDigest": "654959e2",
+      "savedAt": "2026-11-15T22:16:49.769Z"
+    },
+    {
+      "id": "02",
+      "label": "Research Source Verifier",
+      "kind": "ai",
+      "outputFile": "02_source_verification.md",
+      "status": "done",
+      "response": "## Source-to-claim correspondence\n\n| ID | Result | Source location | Explanation |\n|---|---|---|---|\n| R1 | **Supported** | [GitHub Docs: About code owners](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners#about-code-owners); [CODEOWNERS and branch protection](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners#codeowners-and-branch-protection) | GitHub documents assigning owners by file pattern, automatic review requests, and requiring code-owner approval through branch protection. The report correctly qualifies availability and access. The source also notes that draft pull requests do not automatically request review, owners need write access, and one of the owners for a matching pattern can satisfy the approval requirement. |\n| R2 | **Supported** | [GitHub Docs: Path filters](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#onpushpull_requestpull_request_targetpathspaths-ignore); [Git diff comparisons](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#git-diff-comparisons) | GitHub documents `paths` and `paths-ignore`, and says checks associated with a workflow skipped by path filtering remain pending and can block a pull request when required. Path filters are not evaluated for tag pushes; diff-size and timeout behavior also affect filtering. The report does not attribute dependency discovery or compatibility guarantees to this feature. |\n| R3 | **Supported** | [GitHub Docs: Access to reusable workflows](https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workflow-configurations#access-to-reusable-workflows) | The source explicitly permits reuse within the same repository and across repositories subject to visibility, repository access policy, and caller Actions permissions. |\n| R4 | **Supported** | [GitHub Docs: Managing team access to an organization repository](https://docs.github.com/en/organizations/managing-user-access-to-your-organizations-repositories/managing-repository-roles/managing-team-access-to-an-organization-repository#giving-a-team-access-to-a-repository); [About code owners](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners#about-code-owners) | The cited access page describes granting teams access and changing permission levels for a repository. Checking consolidated read access is a reasonable inference from that boundary. The CODEOWNERS page describes ownership and review routing, not a file-level read-access control; the report appropriately distinguishes those functions. |\n\n## Material discrepancies\n\nNone found in the claims attributed to R1–R4. The additional qualifications above do not contradict the report’s wording.\n\nThe illustrative change frequency, time savings, migration effort, and maintenance cost are explicitly labeled scenario assumptions and are **out of scope** for source verification. The report’s conditional benefit interpretations are likewise distinguished from the documented claims.\n\n## Gate result: **Pass**\n\nNo targeted correction is required for the cited claims.",
+      "responseSource": "agent",
+      "wordCount": 381,
+      "signals": {
+        "gate": "Pass"
+      },
+      "agent": {
+        "jobId": "job-mwie9u99-cer7",
+        "provider": "codex",
+        "model": "gpt-6.1-terra",
+        "sessionId": "01a1e148-d7bf-76c3-a375-03da4195d685",
+        "startedAt": "2026-11-15T22:16:49.774Z",
+        "finishedAt": "2026-11-15T22:17:13.932Z",
+        "durationMs": 24158,
+        "toolCalls": 2,
+        "usage": {
+          "inputTokens": 77126,
+          "outputTokens": 923
+        },
+        "trimmed": true
+      },
+      "prompt": "# Session 02 — Research Source Verifier\n\n**Input:** `01_research.md`. Start a **fresh chat**.\n\nYour **only** responsibility is **source-to-claim correspondence**: does each cited source actually say or substantiate what Report 01 attributes to it?\n\nFor each material claim R1, R2, etc.:\n- Open the cited source if possible and locate the relevant supporting material.\n- Identify any qualification, misquotation, wrong number, inaccessible citation, or unsupported leap in what is attributed to that source.\n- Classify **Supported / Partially Supported / Unsupported / Contradicted / Unverifiable**. These labels refer to correspondence, **not overall factual truth**.\n- Cite the specific passage/section you inspected; do not pretend to have accessed a blocked source.\n\n**Do not** decide whether the proposed choice is worthwhile, evaluate the study's underlying methodology, introduce new research, or audit the overall decision. If a claim is an expressly labeled scenario assumption rather than source-attributed fact, mark it out of scope.\n\n**Output:** `02_source_verification.md`: concise per-claim table (ID, result, source location, explanation), material discrepancies, and gate result **Pass / Revise / Block**. Request targeted correction rather than rewriting the original report. Do not ask the user questions.",
+      "inputFiles": [
+        "01_research.md"
+      ],
+      "inputsDigest": "e87f6afc",
+      "savedAt": "2026-11-15T22:17:13.932Z"
+    },
+    {
+      "id": "03",
+      "label": "Benefits Synthesizer",
+      "kind": "ai",
+      "outputFile": "03_benefits_summary.md",
+      "status": "done",
+      "response": "# Benefits Summary\n\nA monorepo could make coordinated changes to the shared library and three services easier to review, test, and merge together. The size of that opportunity depends chiefly on how often those changes occur and whether the team can keep CI and independent releases manageable.\n\n- **Coordinated changes:** One pull request could show library and consumer updates together, reducing coordination when they frequently move together. Review routing can help involve relevant owners (R1). Production deployments would still need their own rollout and rollback plans.\n- **Earlier compatibility feedback:** Library changes could trigger tests for affected services before merge, provided those tests cover the integration and the team identifies all affected consumers. Path filters support selection but do not discover dependencies, and skipped required workflows can block pull requests (R2).\n- **Less repeated maintenance:** Shared instructions, scripts, and CI configuration could reduce parallel edits if the services have enough in common. Reusable workflows are also available across accessible repositories (R3).\n- **Easier cross-service work:** A single checkout could simplify searching and coordinated refactoring if developers regularly work across these codebases and have suitable tools.\n\nThe source-verification gate **passed**, with no material Revise or Block findings. Its “Supported” labels confirm correspondence between R1–R4 and the cited documentation; they do not establish savings or universal outcomes. The reported payback calculation and benefit rankings are hypothetical, and no team systems or usage data were inspected. Different read-access requirements could make full consolidation unsuitable (R4).\n\n**Prioritized questions for the team:**\n\n1. How often do library and service changes need to move together, and what effort and elapsed time do they currently require? This determines the likely coordination benefit.\n2. How are services built, tested, versioned, and deployed, and how do they consume the library? This affects achievable compatibility feedback and migration effort.\n3. Do the codebases need different read access or release controls, and how burdensome is current CI maintenance? This could rule out full consolidation or change the expected maintenance benefit.",
+      "responseSource": "agent",
+      "wordCount": 328,
+      "signals": {},
+      "agent": {
+        "jobId": "job-mwieacwg-798l",
+        "provider": "codex",
+        "model": "gpt-6.1-terra",
+        "sessionId": "01a1e149-361d-7bf1-a89f-919ad0f636bd",
+        "startedAt": "2026-11-15T22:17:13.936Z",
+        "finishedAt": "2026-11-15T22:17:25.154Z",
+        "durationMs": 11218,
+        "toolCalls": 0,
+        "usage": {
+          "inputTokens": 18099,
+          "outputTokens": 417
+        }
+      },
+      "prompt": "# Session 03 — Benefits Synthesizer\n\n**Input:** `01_research.md` and `02_source_verification.md`. Start a **fresh chat**.\n\nProduce a **user-facing benefits summary** using only the supplied reports. Do not add new evidence, exaggerate verification status, or make a final recommendation. A verifier's \"Supported\" label confirms source correspondence, not that the underlying claim is true in every setting.\n\n**Output:** `03_benefits_summary.md`, **300 words maximum**, titled **Benefits Summary**:\n1. Two-sentence opportunity overview.\n2. Up to five high-value potential benefits, each with conditions and claim IDs where useful.\n3. Critical evidence/source-correlation limitations, explicitly mentioning any material `Revise` or `Block` gate.\n4. **Up to three prioritized questions for the user**, each with a brief explanation of how the answer could change the expected benefit. Avoid cosmetic/background questions.\n\nDistinguish established source attribution from modeled or hypothetical upside. Do not ask for answers in this chat.",
+      "inputFiles": [
+        "01_research.md",
+        "02_source_verification.md"
+      ],
+      "inputsDigest": "d12a5bb6",
+      "savedAt": "2026-11-15T22:17:25.154Z"
+    },
+    {
+      "id": "04",
+      "label": "Adversarial Critic",
+      "kind": "ai",
+      "outputFile": "04_critique.md",
+      "status": "done",
+      "response": "# 04 — Independent Adversarial Critique\n\nThe source-verification pass supports the correspondence between R1–R4 and GitHub’s documentation. It does not establish that consolidation would save this team time or improve reliability. The main uncertainties are the frequency of coupled changes, the quality of consumer tests, and the cost of operating the resulting CI and release setup.\n\n## Prioritized objections\n\n1. **C1 — The coordination benefit may be too small to repay migration.**  \n   **Affected claim:** Coordinated library and service changes.  \n   **Concern — logical objection:** A single pull request saves only the work caused by repository separation. If most library changes are backward compatible, consumers upgrade independently, or the existing process is already inexpensive, the gross saving could be modest. A separate-repository integration workflow could capture some compatibility benefit without consolidation.  \n   **Why and when it matters:** The illustrative calculation assumes both a meaningful frequency and a 30-minute saving against the best practical alternative; neither is measured. Migration also competes with product work for a five-person team.  \n   **Decision impact:** High. Low measured net savings, or a cheaper alternative that addresses the same friction, could make migration unattractive.\n\n2. **C2 — Testing the checkout may not validate what is actually released.**  \n   **Affected claim:** Earlier consumer compatibility feedback.  \n   **Concern — logical objection:** Tests against source in one checkout can miss problems in the packaged library, version constraints, deployment configuration, or combinations of old and new service versions. A passing combined pull request also cannot ensure that all production deployments succeed together.  \n   **Why and when it matters:** This is especially relevant if services consume published packages, deploy independently, or must support staggered rollouts. Testing the built artifact and relevant version combinations may remain necessary, adding work beyond the proposed source-level checks.  \n   **Decision impact:** High if release and compatibility failures are the main reason for considering consolidation; the expected reliability improvement depends on what the tests actually exercise.\n\n3. **C3 — Selective CI creates a correctness and maintenance tradeoff.**  \n   **Affected claim:** Earlier feedback and less repeated CI maintenance.  \n   **Concern — logical objection:** Running every service’s checks for every change can increase compute and feedback time; selecting checks requires the team to maintain an accurate mapping from changes to consumers. A missed dependency can produce a misleading green result.  \n   **Why and when it matters:** This applies if full-suite feedback is too slow or costly, particularly as shared tooling and dependencies change. Beyond the already verified required-check issue, GitHub documents that path filtering has diff-generation limits and can omit a matching file beyond the returned file limit. This is mainly relevant to unusually large changes, such as a migration or bulk refactor. [GitHub Actions workflow syntax](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#git-diff-comparisons)  \n   **Decision impact:** Medium to high. A small, fast full suite may make this objection minor; a slow suite and fragile change selection could consume the anticipated maintenance savings.\n\n4. **C4 — Shared administration can enlarge the effect of a configuration mistake.**  \n   **Affected claim:** Less repeated repository and CI maintenance.  \n   **Concern — hypothetical scenario:** A mistake in a common workflow, branch rule, or deployment configuration could block several services or affect the wrong release. Consolidation reduces duplicated settings but also makes some settings and automation shared dependencies.  \n   **Why and when it matters:** The risk rises if service-specific controls are collapsed into one configuration without clear isolation. GitHub’s deployment environments and concurrency controls can help, but concurrency groups must be configured deliberately; an environment does not automatically impose the same concurrency rule on every workflow that uses it. [GitHub Docs: Controlling deployments](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/control-deployments)  \n   **Decision impact:** Medium to high if services have different release controls or if interruptions are costly. Separate service jobs, scoped credentials, and tested deployment paths could reduce the concern, at an ongoing maintenance cost.\n\n5. **C5 — Consolidation may change access and historical-data exposure.**  \n   **Affected claim:** Shared administration and cross-service discovery.  \n   **Concern — logical objection:** The proposed convenience assumes all users and integrations that need repository access may see all included code and relevant history. Review ownership does not create a file-level read boundary, as R4 already establishes. Importing history also requires assessing what that history exposes and deciding how existing links and references will be handled.  \n   **Why and when it matters:** This applies if contractors, service owners, integrations, or historical contributors have different access needs, or if old history contains material that should not be broadly accessible. Whether any such condition exists is **unverified**.  \n   **Decision impact:** Potentially decisive for a full monorepo if access requirements cannot be reconciled; a partial monorepo may still be viable.\n\n## Benefits that remain persuasive\n\nA single pull request and checkout provide a concrete way to inspect, test, and merge a coordinated library-and-consumer source change. That benefit remains persuasive when such changes are frequent and reviewers can manage the combined scope. Likewise, searching and refactoring across all four codebases can be more convenient for developers who routinely work across them. Neither benefit requires assuming atomic production deployment or a measured productivity gain.\n\n## Unresolved information\n\nNo team repositories, workflows, test results, access policies, or migration estimates were inspected. The severity of the objections therefore remains conditional. In particular, repository size and CI scale should not be assumed problematic for five developers and four codebases without measurements.\n\n## Prioritized questions for the team\n\n1. Over a representative recent period, how many library changes required coordinated service changes, and what developer effort and elapsed time did they require? What would an improved separate-repository workflow remove?\n2. How do services consume and deploy the library, and which tests cover the packaged artifact, affected consumers, and mixed-version rollouts? What are current CI duration and maintenance costs?\n3. Do people or integrations require different read access or release controls across the codebases, and are there historical-data or link-preservation requirements for a migration?",
+      "responseSource": "agent",
+      "wordCount": 975,
+      "signals": {},
+      "agent": {
+        "jobId": "job-mwiealk4-e7m4",
+        "provider": "codex",
+        "model": "gpt-6.1-terra",
+        "sessionId": "01a1e149-61f1-7131-8f7a-17dc376d0427",
+        "startedAt": "2026-11-15T22:17:25.157Z",
+        "finishedAt": "2026-11-15T22:17:56.707Z",
+        "durationMs": 31550,
+        "toolCalls": 1,
+        "usage": {
+          "inputTokens": 44704,
+          "outputTokens": 1417
+        }
+      },
+      "prompt": "# Session 04 — Independent Adversarial Critic\n\n**Input:** `01_research.md`, `02_source_verification.md`, `03_benefits_summary.md`. Start a **fresh chat**.\n\nIndependently challenge whether the **proposed benefits apply and are worth pursuing**. Your objective is not to force a \"no\" answer; it is to uncover material omissions, risks, hidden costs, alternative explanations, tradeoffs, and failure conditions.\n\n1. Prioritize **up to five** meaningful objections and label them **C1, C2, ...**.\n2. For each: name the affected benefit/claim, the concern, why it matters, when it applies, and whether it could alter the decision.\n3. Cite specific accessible evidence for **new external factual counterclaims**. Clearly mark **logical objections**, **hypothetical scenarios**, and **unverified conjectures** as such.\n4. Identify any well-supported benefits that remain persuasive; do not manufacture symmetrical opposition.\n5. Give **up to three questions for the user** that could materially change the severity/applicability of the cautions. Don't request answers in this chat.\n6. Respect the findings of the source verifier without assuming source correspondence proves the researcher's conclusion.\n\n**Output:** `04_critique.md`: concise numbered objections with supporting citations, surviving benefits, unresolved information, and prioritized user questions. Do **not** rewrite the original research or impose a final decision.",
+      "inputFiles": [
+        "01_research.md",
+        "02_source_verification.md",
+        "03_benefits_summary.md"
+      ],
+      "inputsDigest": "4f77ab34",
+      "savedAt": "2026-11-15T22:17:56.707Z"
+    },
+    {
+      "id": "05",
+      "label": "Critique Source Verifier",
+      "kind": "ai",
+      "outputFile": "05_critique_verification.md",
+      "status": "done",
+      "response": "# 05 — Critique Source Verification\n\n| Objection | Classification | Passage inspected and correspondence |\n|---|---|---|\n| **C1** | **Not Applicable — Nonfactual** | No external source is attributed to the objection. Its claims are conditional reasoning about coordination costs and alternatives. |\n| **C2** | **Not Applicable — Nonfactual** | No external source is attributed to the objection. It describes possible gaps between checkout tests and released behavior. |\n| **C3** | **Supported** | [GitHub Actions workflow syntax, “Git diff comparisons”](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#git-diff-comparisons) documents diff-generation limits. It says that if a generated diff contains more than 3,000 files and matching files are outside the first 3,000 returned, the filtered workflow will not run. It also documents cases where the workflow always runs, including a diff timeout. |\n| **C4** | **Supported** | [GitHub Docs, “Using environments,” “Using concurrency,” and the note following “Interaction with protection rules”](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/control-deployments) describes deployment controls and states that concurrency and environments are not connected: another workflow using the same environment without concurrency is not subject to those concurrency rules. The configuration-mistake scenario is hypothetical. |\n| **C5** | **Supported** for the referenced R4 access claim; the remaining concerns are logical or conditional. | [GitHub Docs, “Giving a team access to a repository”](https://docs.github.com/en/organizations/managing-user-access-to-your-organizations-repositories/managing-repository-roles/managing-team-access-to-an-organization-repository#giving-a-team-access-to-a-repository) describes repository-level access. [“About code owners”](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners#about-code-owners) describes responsibility and review routing, supporting the distinction from a file-level read boundary. Actual access and historical-data needs are unverified. |\n\n## Material discrepancies\n\nNone found in the new source-attributed claims. The cited passages were accessible.\n\n## Source gate: **Pass**\n\nNo targeted evidence correction is required. This gate checks correspondence to sources, not the overall merit of the objections or their applicability to the team.",
+      "responseSource": "agent",
+      "wordCount": 299,
+      "signals": {
+        "gate": "Pass"
+      },
+      "agent": {
+        "jobId": "job-mwieb9wm-q674",
+        "provider": "codex",
+        "model": "gpt-6.1-terra",
+        "sessionId": "01a1e149-dd35-73e3-a805-9944f2b02972",
+        "startedAt": "2026-11-15T22:17:56.711Z",
+        "finishedAt": "2026-11-15T22:18:21.687Z",
+        "durationMs": 24976,
+        "toolCalls": 2,
+        "usage": {
+          "inputTokens": 82256,
+          "outputTokens": 765
+        }
+      },
+      "prompt": "# Session 05 — Critique Source Verifier\n\n**Input:** `01_research.md`, `02_source_verification.md`, `03_benefits_summary.md`, `04_critique.md`. Start a **fresh chat**.\n\nYour **only** responsibility is to check **source-to-claim correspondence** for the **new factual counterclaims** the critic attributes to cited sources.\n\nFor each numbered objection C1, C2, etc.:\n- Identify any sourced external factual assertion and inspect the specific cited material where accessible.\n- Classify that correspondence **Supported / Partially Supported / Unsupported / Contradicted / Unverifiable**.\n- If an objection is purely logical, conditional, mathematical, or hypothetical with no attributed external source, classify source checking as **Not Applicable — Nonfactual**. This does **not** mean the objection is wrong.\n- State what section/passage was inspected and note blocked sources honestly.\n\n**Do not** adjudicate whether the critic wins, re-evaluate overall merit, or generate competing arguments. Do not expand into a general arithmetic/model audit.\n\n**Output:** `05_critique_verification.md`: compact objection-by-objection source correspondence table; material discrepancies; **Pass / Revise / Block** source gate. Request targeted evidence correction when needed. Do not ask interactive questions.",
+      "inputFiles": [
+        "01_research.md",
+        "02_source_verification.md",
+        "03_benefits_summary.md",
+        "04_critique.md"
+      ],
+      "inputsDigest": "b7ba1f0d",
+      "savedAt": "2026-11-15T22:18:21.687Z"
+    },
+    {
+      "id": "06",
+      "label": "Cautions Synthesizer",
+      "kind": "ai",
+      "outputFile": "06_cautions_summary.md",
+      "status": "done",
+      "response": "# Cautions Summary\n\n1. **Coordination gains may not repay migration (C1).** This qualifies the proposed benefit of coordinated changes. It matters if library changes rarely require simultaneous service updates, or if improved cross-repository checks remove most of the friction. **Evidence: logically conditional; team costs are unmeasured.**\n\n2. **Checkout tests may miss release problems (C2).** This limits the expected compatibility-feedback benefit. It matters when services consume packaged libraries, deploy independently, or run mixed versions; artifact and rollout testing may still be needed. **Evidence: logically conditional.**\n\n3. **CI selection trades speed for maintenance and coverage (C3).** This affects both early feedback and reduced maintenance. It matters if the full suite is too slow or costly: selective checks require accurate consumer mapping, and a missed dependency can give misleading feedback. GitHub’s documented path-filter limits add a concern for unusually large changes. **Evidence: partly source-correlated; applicability is unverified.**\n\n4. **Shared configuration can widen the effect of mistakes (C4).** This qualifies the maintenance benefit when services have different deployment controls or costly interruptions. Separate jobs, scoped credentials, and tested deployment paths can help, but require upkeep. **Evidence: partly source-correlated; the failure scenario is hypothetical.**\n\n5. **Access or history requirements may prevent full consolidation (C5).** This changes the case for shared administration and discovery if users or integrations need different read access, or imported history exposes restricted material. **Evidence: repository-level access is source-correlated; actual requirements are unverified.**\n\nIncompatible read-access requirements are a potential dealbreaker for a full monorepo. The other cautions are tradeoffs whose significance depends on measured costs, tests, and controls; a partial monorepo or improved separate-repository workflow remains possible.\n\nBoth verification gates passed. **No material Revise or Block outcomes remain outstanding.**\n\n**Prioritized questions for later review:**\n\n1. What effort and elapsed time do coordinated changes currently require, and what would an improved separate-repository workflow remove?\n2. Which tests cover packaged artifacts and mixed-version rollouts, and what are current CI duration and maintenance costs?\n3. Do access, release-control, historical-data, or link-preservation requirements differ across codebases?",
+      "responseSource": "agent",
+      "wordCount": 343,
+      "signals": {},
+      "agent": {
+        "jobId": "job-mwiebt6h-42b4",
+        "provider": "codex",
+        "model": "gpt-6.1-terra",
+        "sessionId": "01a1e14a-3ec9-7a10-9e55-0a7f2f46e341",
+        "startedAt": "2026-11-15T22:18:21.690Z",
+        "finishedAt": "2026-11-15T22:18:33.120Z",
+        "durationMs": 11430,
+        "toolCalls": 0,
+        "usage": {
+          "inputTokens": 19787,
+          "outputTokens": 473
+        }
+      },
+      "prompt": "# Session 06 — Cautions Synthesizer\n\n**Input:** All preceding five reports (`01_research.md` through `05_critique_verification.md`). Start a **fresh chat**.\n\nProduce the human-facing caution summary from the supplied record. Do not introduce new facts or treat an unsupported sourced objection as proven. A logical objection can matter even when source verification is not applicable.\n\n**Output:** `06_cautions_summary.md`, **300 words maximum**, titled **Cautions Summary**:\n1. Up to five high-consequence risks, pitfalls, or alternative considerations.\n2. For each, note which proposed benefit it changes, when it matters, and whether evidence was source-correlated, partly verified, unverifiable, or logically conditional (cite C IDs).\n3. Briefly distinguish genuine potential dealbreakers from manageable tradeoffs; do not force a negative outcome.\n4. Flag material verifier `Revise` or `Block` outcomes still outstanding.\n5. **Up to three prioritized questions for the user** whose answers would materially change the cautions. Avoid repeating questions from the Benefits Summary unless necessary; when unavoidable, consolidate them.\n\nNo definitive recommendation, new external research, or request for immediate conversational answers.",
+      "inputFiles": [
+        "01_research.md",
+        "02_source_verification.md",
+        "03_benefits_summary.md",
+        "04_critique.md",
+        "05_critique_verification.md"
+      ],
+      "inputsDigest": "b5aee196",
+      "savedAt": "2026-11-15T22:18:33.120Z"
+    },
+    {
+      "id": "gate",
+      "label": "Your Review",
+      "kind": "human",
+      "outputFile": "user_responses.md",
+      "status": "done",
+      "response": "# Human Review — Should a five-person software team adopt a monorepo?\n\n## Benefits summary answers\nQuestions raised:\n1. How often do library and service changes need to move together, and what effort and elapsed time do they currently require? This determines the likely coordination benefit.\n2. How are services built, tested, versioned, and deployed, and how do they consume the library? This affects achievable compatibility feedback and migration effort.\n3. Do the codebases need different read access or release controls, and how burdensome is current CI maintenance? This could rule out full consolidation or change the expected maintenance benefit.\n\nAnswer:\n\n1. Maybe once or twice a month a library change needs matching changes in two or three services. Each time it takes about two days, mostly waiting on reviews and merging in the right order.\n2. Each service has its own GitHub Actions workflow and deploys on its own. The library is published as a versioned package, and the services upgrade it by hand when they get around to it.\n3. No special access needs, all five of us can read everything. CI maintenance is annoying but small, maybe a few hours a month.\n\n## Cautions summary answers\nQuestions raised:\n1. What effort and elapsed time do coordinated changes currently require, and what would an improved separate-repository workflow remove?\n2. Which tests cover packaged artifacts and mixed-version rollouts, and what are current CI duration and maintenance costs?\n3. Do access, release-control, historical-data, or link-preservation requirements differ across codebases?\n\nAnswer:\n\n1. A coordinated change costs about two days of elapsed time now. A cleaner process with a single tracking ticket and a merge checklist would probably cut that to a day.\n2. Each service has unit tests and a few integration tests. Nothing tests packaged artifacts or runs old and new versions together. CI takes about 8 to 12 minutes per service, with no budget worry.\n3. Nothing differs across the codebases. One of the services has a few old commits with an old test password in them, which we would need to clean up before merging history.\n\n## Additional context / corrections\n- We have no one who owns build tooling, so whatever we choose has to be simple to look after. We would be happy with a small trial before committing.\n\n## Authorization\n- [x] Proceed to Session 07\n- [ ] Run another round with this context\n- [ ] Pause\n- [ ] Stop the investigation\n",
+      "fields": {
+        "bq": "1. Maybe once or twice a month a library change needs matching changes in two or three services. Each time it takes about two days, mostly waiting on reviews and merging in the right order.\n2. Each service has its own GitHub Actions workflow and deploys on its own. The library is published as a versioned package, and the services upgrade it by hand when they get around to it.\n3. No special access needs, all five of us can read everything. CI maintenance is annoying but small, maybe a few hours a month.",
+        "cq": "1. A coordinated change costs about two days of elapsed time now. A cleaner process with a single tracking ticket and a merge checklist would probably cut that to a day.\n2. Each service has unit tests and a few integration tests. Nothing tests packaged artifacts or runs old and new versions together. CI takes about 8 to 12 minutes per service, with no budget worry.\n3. Nothing differs across the codebases. One of the services has a few old commits with an old test password in them, which we would need to clean up before merging history.",
+        "ctx": "We have no one who owns build tooling, so whatever we choose has to be simple to look after. We would be happy with a small trial before committing.",
+        "auth": "proceed"
+      },
+      "responseSource": "form",
+      "inputFiles": [
+        "03_benefits_summary.md",
+        "06_cautions_summary.md"
+      ],
+      "inputsDigest": "01fa8530",
+      "savedAt": "2026-11-15T22:20:07.887Z"
+    },
+    {
+      "id": "07",
+      "label": "Decision Synthesizer",
+      "kind": "ai",
+      "outputFile": "07_decision_brief.md",
+      "status": "done",
+      "response": "# User-Informed Decision Brief\n\n## Current assessment\n\nA monorepo could help this five-person team review and merge the library and service changes that reportedly occur once or twice a month. The case for a permanent migration is not yet established: the team estimates that a simpler cross-repository process could halve the current two-day elapsed time, and it has no dedicated build-tooling owner.\n\n## Relevant benefits and their conditions\n\n- **Coordinated changes (R1):** One pull request could make related updates easier to review. The potential improvement is against the estimated one-day alternative, not necessarily the current two-day process; neither estimate measures developer effort.\n- **Earlier compatibility feedback (R2):** Running affected service tests against a library change could expose some integration failures before merge. It depends on accurate consumer selection and sufficient test coverage.\n- **Shared maintenance and discovery (R3):** A single checkout and shared configuration may help, but the reported CI maintenance burden is only a few hours per month. Reusable workflows are also possible across repositories.\n\n## Relevant cautions and uncertainties\n\n- **Migration payoff and upkeep (C1, C3):** Migration cost is unknown. With 8–12 minute service CI runs and no budget concern, a simple full-suite trial may be preferable to maintaining selective checks.\n- **Release compatibility (C2):** Services consume a versioned package, upgrade manually, and deploy independently. Existing tests reportedly cover neither packaged artifacts nor mixed versions, so a monorepo alone would leave those gaps.\n- **Access and history (C5):** The team reports no differing access needs, reducing the access concern. An old test password in one service’s history must be assessed and addressed before importing that history; link-preservation requirements are reported as consistent.\n- **Shared configuration (C4):** Independent deployments should retain appropriate controls; shared configuration can increase the reach of a mistake.\n\nThe earlier verification gates passed for correspondence between the cited documentation and the source-attributed claims. The team’s figures and circumstances are user-supplied and independently unchecked; the expected gains and cautions above are conditional inferences.\n\n## Suggested next action: **Proceed conditionally**\n\nRun a small, time-boxed trial and compare its effort and elapsed time with the tracking-ticket and merge-checklist alternative. Include a simple full-suite CI setup, a packaged-artifact check, and an assessment of the historical credential before deciding on full migration. The human team remains the final decision-maker.\n\n## Material unanswered questions\n\n1. How much effort would migration and ongoing monorepo upkeep require?\n2. How much time does the improved separate-repository process actually save?\n3. What handling does the historical password require before history is imported?",
+      "responseSource": "agent",
+      "wordCount": 422,
+      "signals": {
+        "action": "Proceed conditionally"
+      },
+      "agent": {
+        "jobId": "job-mwiee396-b7sx",
+        "provider": "codex",
+        "model": "gpt-6.1-terra",
+        "sessionId": "01a1e14b-de4d-74b3-9bdd-496a15736ac3",
+        "startedAt": "2026-11-15T22:20:08.058Z",
+        "finishedAt": "2026-11-15T22:20:21.097Z",
+        "durationMs": 13039,
+        "toolCalls": 0,
+        "usage": {
+          "inputTokens": 18328,
+          "outputTokens": 556
+        }
+      },
+      "prompt": "# Session 07 — User-Informed Decision Synthesizer\n\n**Input:** `03_benefits_summary.md`, `06_cautions_summary.md`, `02_source_verification.md`, `05_critique_verification.md`, and `user_responses.md`. Provide `01_research.md` and `04_critique.md` as well if claim-level context is needed. Start a **fresh chat**.\n\nYou are combining **two independently developed perspectives and the user's answers** into a brief, user-specific decision aid. The user has already reviewed the summaries and chosen to proceed.\n\n1. Explain which potential benefits apply or fail to apply based on supplied user context.\n2. Explain which cautions are applicable, reduced, increased, or still unresolved.\n3. Maintain the distinction between **verified source correspondence**, reasoned inference, scenario assumptions, and factual claims the user supplied but no independent source checked.\n4. Do not invent new research, silently treat user assertions as external verification, or assert certainty where source/reasoning gaps remain.\n5. If critical questions cannot be resolved with the record, recommend further investigation instead of deciding by fiat.\n6. Refer back to report IDs/claim IDs where it materially improves traceability.\n\n**Output:** `07_decision_brief.md`, **400 words maximum**, titled **User-Informed Decision Brief**:\n- Current assessment (2–3 sentences)\n- Relevant benefits and their conditions\n- Relevant cautions and remaining uncertainties\n- **Suggested next action:** Proceed / Proceed conditionally / Investigate further / Do not proceed — with brief rationale\n- At most three material unanswered questions\n\nThis is **decision support**. The human remains the final decision-maker. Do not launch another iteration or ask interactive questions.",
+      "inputFiles": [
+        "03_benefits_summary.md",
+        "06_cautions_summary.md",
+        "02_source_verification.md",
+        "05_critique_verification.md",
+        "user_responses.md"
+      ],
+      "inputsDigest": "062c7a91",
+      "savedAt": "2026-11-15T22:22:06.257Z"
+    }
+  ],
+  "integrity": {
+    "algorithm": "sha256",
+    "contentHash": "sha256:3d11d199dfcba97d5c6ec2a9843b0e5ab80463654e3d7f2c29ab9c8d487c7607",
+    "computedAt": "2026-11-15T22:22:06.267Z"
+  }
+}

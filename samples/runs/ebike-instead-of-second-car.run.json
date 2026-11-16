@@ -1,0 +1,618 @@
+{
+  "format": "workflow-run",
+  "formatVersion": 1,
+  "id": "run-mwiegp6t-d71l",
+  "title": "E-bike instead of a second car?",
+  "tag": "adversarial-research@3.6.1#2f591b94",
+  "status": "completed",
+  "createdAt": "2026-11-15T22:22:09.797Z",
+  "updatedAt": "2026-11-15T22:26:54.933Z",
+  "completedAt": "2026-11-15T22:26:54.924Z",
+  "variables": {
+    "question": "Is an e-bike a worthwhile replacement for a household's second car on a 10 km commute?",
+    "scope": "Suburban household, mostly flat route with some bike lanes, mild winters with some rain, second car is paid off but old."
+  },
+  "template": {
+    "id": "adversarial-research",
+    "title": "Independent Adversarial Research",
+    "version": "3.6.1",
+    "sourceFile": "adversarial-research-v3.json",
+    "hash": "sha256:2f591b9411ba9c7e110cacc5a81834cd485d85d16b3ca61dd5288b3923b9cada",
+    "definition": {
+      "format": "workflow-template",
+      "formatVersion": 1,
+      "id": "adversarial-research",
+      "title": "Independent Adversarial Research",
+      "version": "3.6.1",
+      "description": "Seven isolated AI sessions plus one human review. A researcher argues for the decision, a critic argues against it, two verifiers check that cited sources say what is claimed, and a final session combines everything with your own answers into a short decision brief. If the first pass leaves too many gaps, you can run another round that builds on it.",
+      "intro": [
+        "Every session happens in a brand-new chat. Use any AI tool you like (ChatGPT, Claude, Gemini…) and switch models between sessions if you want — just never continue a previous chat.",
+        "For each session this guide gives you two things to copy: the context (the reports produced by earlier sessions) and the prompt. Paste both into the new chat as one message and send it.",
+        "Copy the full reply back into this guide. It becomes the input for later sessions, so you never have to manage files yourself.",
+        "Verification sessions only check that sources say what was claimed — not that the claims are true. If a verifier asks for a revision, you decide whether to fix it first or carry the flag forward.",
+        "After Session 06 you review both summaries, answer their questions in your own words, and decide what happens next: get the decision brief, pause, stop, or run another round that starts again at Session 01 with everything gathered so far. Nothing here makes the decision for you."
+      ],
+      "titleVariable": "question",
+      "variables": [
+        {
+          "key": "question",
+          "label": "Decision to investigate",
+          "required": true,
+          "multiline": true,
+          "placeholder": "e.g. Is replacing a gas furnace with a heat pump worthwhile for a typical household?",
+          "help": "Phrase it as a decision you are considering, not a universal claim."
+        },
+        {
+          "key": "scope",
+          "label": "Scenario / constraints (optional)",
+          "multiline": true,
+          "placeholder": "e.g. Detached house in a cold-winter climate, planning to stay 10+ years, would pay upfront.",
+          "help": "Any baseline facts the researcher should assume. Leave blank to have it document assumptions and ask you later."
+        }
+      ],
+      "steps": [
+        {
+          "id": "01",
+          "label": "Independent Researcher",
+          "kind": "ai",
+          "description": "Researches the question and lists up to five potential benefits, each backed by numbered claims (R1, R2…) with source links.",
+          "inputs": [],
+          "prompt": "# Session 01 — Independent Researcher\n\n**Input:** Research question and any explicitly provided scenario constraints. Start a **fresh chat**.\n\nInvestigate this decision:\n\n> {{question}}{{#scope}}\n\nScenario constraints / scope supplied by the user:\n\n> {{scope}}{{/scope}}\n\n{{#priorRound}}This is **round {{round}}** of this investigation. The attached `round-{{prevRound}}_*` files are the previous round's reports, verifications, and the user's answers (including any decision brief, follow-up research, and answers to its open questions). Treat the user's answers and context as their scenario. Build on the earlier work rather than repeating it: re-check claims that were disputed, close the gaps and open questions it left, and look for evidence the earlier round missed. Don't ask the user questions they already answered.\n\n{{/priorRound}}Your goal is to identify **potential benefits** and the circumstances under which they may be achieved. Produce a self-contained report for independent review, not a definitive universal verdict.\n\n1. Prioritize **up to five** consequential benefits or advantages.\n2. Label supporting external factual claims **R1, R2, ...**, provide accessible, specific links and pinpoint source passages/sections where possible.\n3. Clearly distinguish directly sourced statements, assumptions, illustrative calculations, and user-dependent scenarios.\n4. Include major comparison boundaries (e.g., operating versus acquisition cost), plausible alternatives, and limitations without conducting the adversarial critic's job.\n5. Include **up to three questions** for the user whose answers could materially alter the expected benefits. Explain why each matters. Don't request answers in this chat.\n6. Don't invent user circumstances or claim to have inspected sources you cannot access. If a necessary external source is inaccessible, say so.\n\n**Output:** `01_research.md` with: question/scope; benefits and numbered claims; evidence/source links; illustrative calculations/assumptions; alternatives/boundaries; unresolved information and prioritized user questions; readiness for source verification.\n\nKeep the report focused rather than encyclopedic. Do not ask interactive follow-up questions.",
+          "output": {
+            "file": "01_research.md",
+            "title": "Research report"
+          },
+          "checklist": [
+            "The report actually addresses your question and scope",
+            "Claims are numbered R1, R2… with links you can open",
+            "Sourced facts are separated from assumptions and illustrative calculations",
+            "You opened one or two important links and they look relevant"
+          ]
+        },
+        {
+          "id": "02",
+          "label": "Research Source Verifier",
+          "kind": "ai",
+          "description": "Checks whether each cited source really says what the research report claims. It does not judge whether the decision is good.",
+          "inputs": [
+            "01"
+          ],
+          "prompt": "# Session 02 — Research Source Verifier\n\n**Input:** `01_research.md`. Start a **fresh chat**.\n\nYour **only** responsibility is **source-to-claim correspondence**: does each cited source actually say or substantiate what Report 01 attributes to it?\n\nFor each material claim R1, R2, etc.:\n- Open the cited source if possible and locate the relevant supporting material.\n- Identify any qualification, misquotation, wrong number, inaccessible citation, or unsupported leap in what is attributed to that source.\n- Classify **Supported / Partially Supported / Unsupported / Contradicted / Unverifiable**. These labels refer to correspondence, **not overall factual truth**.\n- Cite the specific passage/section you inspected; do not pretend to have accessed a blocked source.\n\n**Do not** decide whether the proposed choice is worthwhile, evaluate the study's underlying methodology, introduce new research, or audit the overall decision. If a claim is an expressly labeled scenario assumption rather than source-attributed fact, mark it out of scope.\n\n**Output:** `02_source_verification.md`: concise per-claim table (ID, result, source location, explanation), material discrepancies, and gate result **Pass / Revise / Block**. Request targeted correction rather than rewriting the original report. Do not ask the user questions.",
+          "output": {
+            "file": "02_source_verification.md",
+            "title": "Research source verification"
+          },
+          "checklist": [
+            "There is a per-claim table with a result for each R claim",
+            "The report ends with a gate result: Pass, Revise or Block",
+            "If any important claim is Unsupported or Contradicted, you have decided whether to correct Session 01 first"
+          ],
+          "signals": [
+            {
+              "key": "gate",
+              "label": "Source gate",
+              "match": "gate",
+              "options": [
+                "Pass",
+                "Revise",
+                "Block"
+              ],
+              "warnOn": [
+                "Revise",
+                "Block"
+              ],
+              "warning": "The verifier flagged citation problems. The workflow recommends going back to the authoring session (in its original chat), asking it for a targeted correction of the flagged claims, pasting the corrected report into that step, and then re-running this verification. You can also continue and carry the flag forward — later sessions are instructed to mention it.",
+              "fix": {
+                "step": "01",
+                "on": [
+                  "Revise"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "03",
+          "label": "Benefits Synthesizer",
+          "kind": "ai",
+          "description": "Condenses the research and its verification into a short, user-facing Benefits Summary with up to three questions for you.",
+          "inputs": [
+            "01",
+            "02"
+          ],
+          "prompt": "# Session 03 — Benefits Synthesizer\n\n**Input:** `01_research.md` and `02_source_verification.md`. Start a **fresh chat**.\n\nProduce a **user-facing benefits summary** using only the supplied reports. Do not add new evidence, exaggerate verification status, or make a final recommendation. A verifier's \"Supported\" label confirms source correspondence, not that the underlying claim is true in every setting.\n\n**Output:** `03_benefits_summary.md`, **300 words maximum**, titled **Benefits Summary**:\n1. Two-sentence opportunity overview.\n2. Up to five high-value potential benefits, each with conditions and claim IDs where useful.\n3. Critical evidence/source-correlation limitations, explicitly mentioning any material `Revise` or `Block` gate.\n4. **Up to three prioritized questions for the user**, each with a brief explanation of how the answer could change the expected benefit. Avoid cosmetic/background questions.\n\nDistinguish established source attribution from modeled or hypothetical upside. Do not ask for answers in this chat.",
+          "output": {
+            "file": "03_benefits_summary.md",
+            "title": "Benefits summary"
+          },
+          "wordLimit": 300,
+          "feature": true,
+          "checklist": [
+            "Titled “Benefits Summary” and roughly 300 words or fewer",
+            "Mentions the verifier’s gate result if it was Revise or Block",
+            "Ends with up to three questions for you"
+          ]
+        },
+        {
+          "id": "04",
+          "label": "Adversarial Critic",
+          "kind": "ai",
+          "description": "Independently challenges the benefits — hidden costs, risks, failure conditions and alternatives — as numbered objections (C1, C2…).",
+          "inputs": [
+            "01",
+            "02",
+            "03"
+          ],
+          "prompt": "# Session 04 — Independent Adversarial Critic\n\n**Input:** `01_research.md`, `02_source_verification.md`, `03_benefits_summary.md`. Start a **fresh chat**.\n\nIndependently challenge whether the **proposed benefits apply and are worth pursuing**. Your objective is not to force a \"no\" answer; it is to uncover material omissions, risks, hidden costs, alternative explanations, tradeoffs, and failure conditions.\n\n1. Prioritize **up to five** meaningful objections and label them **C1, C2, ...**.\n2. For each: name the affected benefit/claim, the concern, why it matters, when it applies, and whether it could alter the decision.\n3. Cite specific accessible evidence for **new external factual counterclaims**. Clearly mark **logical objections**, **hypothetical scenarios**, and **unverified conjectures** as such.\n4. Identify any well-supported benefits that remain persuasive; do not manufacture symmetrical opposition.\n5. Give **up to three questions for the user** that could materially change the severity/applicability of the cautions. Don't request answers in this chat.\n6. Respect the findings of the source verifier without assuming source correspondence proves the researcher's conclusion.\n\n**Output:** `04_critique.md`: concise numbered objections with supporting citations, surviving benefits, unresolved information, and prioritized user questions. Do **not** rewrite the original research or impose a final decision.",
+          "output": {
+            "file": "04_critique.md",
+            "title": "Adversarial critique"
+          },
+          "checklist": [
+            "Objections are numbered C1, C2… and are substantive, not cosmetic",
+            "New factual counterclaims have sources; logical objections are labeled as such",
+            "It names the benefits that still hold up"
+          ]
+        },
+        {
+          "id": "05",
+          "label": "Critique Source Verifier",
+          "kind": "ai",
+          "description": "Checks that the critic’s new factual counterclaims match their cited sources. Purely logical objections are marked Not Applicable.",
+          "inputs": [
+            "01",
+            "02",
+            "03",
+            "04"
+          ],
+          "prompt": "# Session 05 — Critique Source Verifier\n\n**Input:** `01_research.md`, `02_source_verification.md`, `03_benefits_summary.md`, `04_critique.md`. Start a **fresh chat**.\n\nYour **only** responsibility is to check **source-to-claim correspondence** for the **new factual counterclaims** the critic attributes to cited sources.\n\nFor each numbered objection C1, C2, etc.:\n- Identify any sourced external factual assertion and inspect the specific cited material where accessible.\n- Classify that correspondence **Supported / Partially Supported / Unsupported / Contradicted / Unverifiable**.\n- If an objection is purely logical, conditional, mathematical, or hypothetical with no attributed external source, classify source checking as **Not Applicable — Nonfactual**. This does **not** mean the objection is wrong.\n- State what section/passage was inspected and note blocked sources honestly.\n\n**Do not** adjudicate whether the critic wins, re-evaluate overall merit, or generate competing arguments. Do not expand into a general arithmetic/model audit.\n\n**Output:** `05_critique_verification.md`: compact objection-by-objection source correspondence table; material discrepancies; **Pass / Revise / Block** source gate. Request targeted evidence correction when needed. Do not ask interactive questions.",
+          "output": {
+            "file": "05_critique_verification.md",
+            "title": "Critique source verification"
+          },
+          "checklist": [
+            "There is a table covering each C objection",
+            "The report ends with a source gate: Pass, Revise or Block",
+            "If material citations failed, you have decided whether to correct Session 04 first"
+          ],
+          "signals": [
+            {
+              "key": "gate",
+              "label": "Source gate",
+              "match": "gate",
+              "options": [
+                "Pass",
+                "Revise",
+                "Block"
+              ],
+              "warnOn": [
+                "Revise",
+                "Block"
+              ],
+              "warning": "The verifier flagged citation problems. The workflow recommends going back to the authoring session (in its original chat), asking it for a targeted correction of the flagged claims, pasting the corrected report into that step, and then re-running this verification. You can also continue and carry the flag forward — later sessions are instructed to mention it.",
+              "fix": {
+                "step": "04",
+                "on": [
+                  "Revise"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "06",
+          "label": "Cautions Synthesizer",
+          "kind": "ai",
+          "description": "Condenses the critique and its verification into a short Cautions Summary with up to three more questions for you.",
+          "inputs": [
+            "01",
+            "02",
+            "03",
+            "04",
+            "05"
+          ],
+          "prompt": "# Session 06 — Cautions Synthesizer\n\n**Input:** All preceding five reports (`01_research.md` through `05_critique_verification.md`). Start a **fresh chat**.\n\nProduce the human-facing caution summary from the supplied record. Do not introduce new facts or treat an unsupported sourced objection as proven. A logical objection can matter even when source verification is not applicable.\n\n**Output:** `06_cautions_summary.md`, **300 words maximum**, titled **Cautions Summary**:\n1. Up to five high-consequence risks, pitfalls, or alternative considerations.\n2. For each, note which proposed benefit it changes, when it matters, and whether evidence was source-correlated, partly verified, unverifiable, or logically conditional (cite C IDs).\n3. Briefly distinguish genuine potential dealbreakers from manageable tradeoffs; do not force a negative outcome.\n4. Flag material verifier `Revise` or `Block` outcomes still outstanding.\n5. **Up to three prioritized questions for the user** whose answers would materially change the cautions. Avoid repeating questions from the Benefits Summary unless necessary; when unavoidable, consolidate them.\n\nNo definitive recommendation, new external research, or request for immediate conversational answers.",
+          "output": {
+            "file": "06_cautions_summary.md",
+            "title": "Cautions summary"
+          },
+          "wordLimit": 300,
+          "feature": true,
+          "checklist": [
+            "Titled “Cautions Summary” and roughly 300 words or fewer",
+            "Separates potential dealbreakers from manageable tradeoffs",
+            "Ends with up to three questions for you"
+          ]
+        },
+        {
+          "id": "gate",
+          "label": "Your Review",
+          "kind": "human",
+          "description": "Read both summaries, answer their questions in your own words, add any context, and decide what to do next. No AI is involved in this step.",
+          "inputs": [
+            "03",
+            "06"
+          ],
+          "output": {
+            "file": "user_responses.md",
+            "title": "Your responses"
+          },
+          "fields": [
+            {
+              "key": "bq",
+              "type": "text",
+              "label": "Benefits summary — your answers",
+              "questionsFrom": "03",
+              "placeholder": "Answer whichever questions apply, in any order, and add anything else relevant to the benefits.",
+              "help": "Write freely. Skipping a question is fine — the next session treats it as unknown."
+            },
+            {
+              "key": "cq",
+              "type": "text",
+              "label": "Cautions summary — your answers",
+              "questionsFrom": "06",
+              "placeholder": "Answer whichever questions apply, in any order, and add anything else relevant to the cautions.",
+              "help": "Write freely. Skipping a question is fine — the next session treats it as unknown."
+            },
+            {
+              "key": "ctx",
+              "type": "text",
+              "label": "Additional context or corrections",
+              "placeholder": "Constraints, existing equipment, budget, usage, preferences… or leave blank for none.",
+              "help": "Facts you add here are treated as your scenario, not as independently verified evidence."
+            },
+            {
+              "key": "auth",
+              "type": "decision",
+              "label": "What would you like to do?",
+              "options": [
+                {
+                  "value": "proceed",
+                  "label": "Proceed to Session 07",
+                  "description": "Get a conditional decision brief that combines both summaries with your answers.",
+                  "effect": "continue"
+                },
+                {
+                  "value": "loop",
+                  "label": "Run another round with this context",
+                  "description": "Continue this run with another round: back to Session 01 with everything from this round — the reports, verifications, and your answers — as input, so the new research builds on it instead of starting over. This round stays in the run and can be viewed from its summary.",
+                  "effect": "loop",
+                  "carryInto": [
+                    "01"
+                  ]
+                },
+                {
+                  "value": "pause",
+                  "label": "Pause",
+                  "description": "Stop here for now to clarify something or re-verify a claim. You can resume this run later.",
+                  "effect": "pause"
+                },
+                {
+                  "value": "stop",
+                  "label": "Stop the investigation",
+                  "description": "End the run here. The summary page will show everything gathered so far.",
+                  "effect": "stop"
+                }
+              ]
+            }
+          ],
+          "outputTemplate": "# Human Review — {{question}}\n\n## Benefits summary answers\n{{bq}}\n\n## Cautions summary answers\n{{cq}}\n\n## Additional context / corrections\n{{ctx}}\n\n## Authorization\n{{auth}}\n"
+        },
+        {
+          "id": "07",
+          "label": "Decision Synthesizer",
+          "kind": "ai",
+          "description": "Combines both perspectives with your answers into a short, conditional decision brief with a suggested next action.",
+          "inputs": [
+            "03",
+            "06",
+            "02",
+            "05",
+            "gate"
+          ],
+          "optionalInputs": [
+            "01",
+            "04"
+          ],
+          "prompt": "# Session 07 — User-Informed Decision Synthesizer\n\n**Input:** `03_benefits_summary.md`, `06_cautions_summary.md`, `02_source_verification.md`, `05_critique_verification.md`, and `user_responses.md`. Provide `01_research.md` and `04_critique.md` as well if claim-level context is needed. Start a **fresh chat**.\n\nYou are combining **two independently developed perspectives and the user's answers** into a brief, user-specific decision aid. The user has already reviewed the summaries and chosen to proceed.{{#followUp}}\n\n**Follow-up:** An earlier version of this brief recommended investigating further. Since then: `follow-up_previous_*` is the latest earlier version of this brief, `follow-up_answers.md` holds what the user added, and `follow-up_research.md` (if present) holds findings from research on its open questions. Write an updated brief that takes them into account, and say briefly what changed and why. Treat the user's answers as their stated scenario, not as independently verified evidence. Research findings count as sourced only where they cite a source.\n\nOnly recommend **Investigate further** again if more research could still settle a critical question. If what remains can only be answered by the user (their own quotes, bills, plans, approvals, or preferences), recommend **Proceed conditionally** or **Do not proceed** instead, and state those answers as the conditions.{{/followUp}}\n\n1. Explain which potential benefits apply or fail to apply based on supplied user context.\n2. Explain which cautions are applicable, reduced, increased, or still unresolved.\n3. Maintain the distinction between **verified source correspondence**, reasoned inference, scenario assumptions, and factual claims the user supplied but no independent source checked.\n4. Do not invent new research, silently treat user assertions as external verification, or assert certainty where source/reasoning gaps remain.\n5. If critical questions cannot be resolved with the record, recommend further investigation instead of deciding by fiat.\n6. Refer back to report IDs/claim IDs where it materially improves traceability.\n\n**Output:** `07_decision_brief.md`, **400 words maximum**, titled **User-Informed Decision Brief**:\n- Current assessment (2–3 sentences)\n- Relevant benefits and their conditions\n- Relevant cautions and remaining uncertainties\n- **Suggested next action:** Proceed / Proceed conditionally / Investigate further / Do not proceed — with brief rationale\n- At most three material unanswered questions\n\nThis is **decision support**. The human remains the final decision-maker. Do not launch another iteration or ask interactive questions.",
+          "output": {
+            "file": "07_decision_brief.md",
+            "title": "Decision brief"
+          },
+          "wordLimit": 400,
+          "feature": true,
+          "checklist": [
+            "Titled “User-Informed Decision Brief” and roughly 400 words or fewer",
+            "Gives a suggested next action with a rationale",
+            "Your own facts are not presented as independently verified"
+          ],
+          "signals": [
+            {
+              "key": "action",
+              "label": "Suggested next action",
+              "match": "next action",
+              "options": [
+                "Proceed conditionally",
+                "Investigate further",
+                "Do not proceed",
+                "Proceed"
+              ],
+              "followUp": [
+                "Investigate further"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "position": 7,
+  "progress": {
+    "completed": 8,
+    "total": 8
+  },
+  "steps": [
+    {
+      "id": "01",
+      "label": "Independent Researcher",
+      "kind": "ai",
+      "outputFile": "01_research.md",
+      "status": "done",
+      "response": "## Question and scope\n\n**Question:** Is an e-bike a worthwhile replacement for a household’s second car on a 10 km commute?\n\nThe supplied scenario is a suburban household, a mostly flat route with some bike lanes, mild winters with some rain, and a paid-off but old second car. The location, rider, car, trip frequency and other household travel needs are unspecified.\n\n**Working interpretation:** The 10 km is one way, and the proposed e-bike is a pedal-assist bicycle. Both matter to the estimates below. Dollar amounts are illustrative US dollars, not local price estimates.\n\nAn e-bike could provide meaningful savings, physical activity and emissions reductions on this commute. The largest financial benefit depends on whether the household can actually give up the second car, including its noncommute uses. Keeping the car and riding only sometimes can still save fuel, but leaves most ownership costs in place.\n\n## Potential benefits and numbered claims\n\n### 1. Lower commuting and potentially household transport costs\n\n**Directly sourced — R1.** The US Department of Energy describes e-bikes as a potentially low-cost alternative to car use and reports that charging can cost less than $50 a year even with daily riding. This is a general example, not an estimate for this household. [DOE, “Active Transportation and Micromobility,” e-bike paragraph](https://afdc.energy.gov/conserve/active-transportation).\n\n**Directly sourced — R2.** DOE’s vehicle-cost methodology includes fuel, maintenance and tires, insurance, licensing and registration among vehicle cost components. Actual avoidable costs depend on the household and jurisdiction. [DOE, “Vehicle Cost Calculator Assumptions and Methodology,” total annual cost section](https://afdc.energy.gov/calc/cost_calculator_methodology.html).\n\n**Household-dependent implication.** Each car commute replaced can avoid some fuel and mileage-related wear. If the car can be sold or otherwise removed, the household may also avoid insurance, registration and future repairs, and receive sale proceeds. The car is already paid off, so there is no car loan payment to eliminate and its historical purchase price is a sunk cost. An old car may have substantial future repair costs, but neither their amount nor timing is known.\n\nThe e-bike’s purchase, accessories, maintenance, battery replacement, electricity and any insurance or theft losses also count. The illustrative calculation below shows why **riding instead of driving** and **eliminating a car** lead to different financial results.\n\n### 2. More physical activity within the commute\n\n**Directly sourced — R3.** In a small cross-sectional study of 19 people riding their own pedal-assist e-bikes on regular commutes, average measured intensity on flat segments was moderate by the study’s metabolic-equivalent classification. The study describes these riders’ trips; it does not predict the intensity or long-term health outcome of a particular household member. [Riiser et al., “The self-selected intensity of physical activity during real-life e-bike commuting,” abstract and results §3.2](https://www.frontiersin.org/journals/sports-and-active-living/articles/10.3389/fspor.2025.1653833/full).\n\n**Directly sourced — R4.** The CDC says adults should aim for 150 minutes of moderate-intensity aerobic activity a week, or an equivalent combination; activity intensity depends on the person. [CDC, “What Counts as Physical Activity for Adults,” aerobic activity section](https://www.cdc.gov/physical-activity-basics/adding-adults/what-counts.html).\n\n**User-dependent scenario.** If the rider pedals at sufficient intensity and the commute adds activity rather than displacing other exercise, regular riding could contribute to that target. Assistance level, fitness and riding style affect effort; a throttle-only journey should not be assumed to provide the same activity.\n\n### 3. Reduced car tailpipe emissions\n\n**Directly sourced — R5.** The US EPA estimates that an average passenger vehicle emits about 400 grams of tailpipe CO₂ per mile; the actual figure varies with vehicle and fuel. [EPA, “Greenhouse Gas Emissions from a Typical Passenger Vehicle,” emissions per mile section](https://www.epa.gov/greenvehicles/greenhouse-gas-emissions-typical-passenger-vehicle).\n\n**Illustrative implication.** If the displaced car is gasoline-powered and resembles that average, replacing 3,000 km of car driving avoids approximately **0.75 metric tonnes of tailpipe CO₂ annually**, before accounting for replacement travel. This is not a full lifecycle comparison: electricity generation, manufacturing, battery replacement, fuel production and the future use of a sold car are excluded. If the car is electric or otherwise differs substantially from the assumed vehicle, the comparison changes.\n\n### 4. A practical assisted option for a moderate-distance commute\n\n**Directly sourced — R6.** In a study of 18 sedentary adults on a hilly commuting route, electrically assisted cycling required less measured effort than conventional cycling; the results were specific to that route and group. [Gojanovic et al., “Electric bicycles as a new active transportation modality to promote health,” abstract](https://pubmed.ncbi.nlm.nih.gov/22005715/).\n\n**User-dependent scenario.** Assistance could make a 10 km ride more manageable or reduce exertion on days when the rider wants it. The flat route and mild winters make a trial plausible, but rain, darkness, traffic, gaps between bike lanes, secure parking, luggage and the rider’s comfort may determine actual use. A 10 km trip at an *assumed door-to-door average* of 20 km/h takes 30 minutes; stops, route choice and preparation can change this substantially. No time saving over driving is established.\n\n## Illustrative calculation and assumptions\n\nThis example is designed to expose the decision’s sensitivity, not predict a bill or guarantee savings.\n\n| Input | Illustrative assumption |\n|---|---:|\n| Commute distance | 10 km each way; 20 km round trip |\n| Replaced car commutes | 150 round trips per year |\n| Car driving displaced | 3,000 km, or about 1,864 miles per year |\n| Gasoline car fuel economy | 25 US mpg |\n| Gasoline price | $3.50 per US gallon |\n| E-bike electricity | 15 Wh/km from the wall at $0.20/kWh |\n| E-bike plus initial equipment | $2,000 |\n| Bike maintenance and battery reserve | $250/year |\n\n**Arithmetic:**\n\n- Avoided gasoline: 1,864 ÷ 25 ≈ **75 gallons**, or **$261/year**.\n- E-bike electricity: 3,000 × 0.015 = **45 kWh**, or **$9/year**.\n- Fuel savings less electricity: approximately **$252/year**, before bike maintenance and all other costs.\n- After the assumed $250 annual bike maintenance and battery reserve, the example leaves approximately **$2/year** toward the $2,000 initial outlay, before any avoided car wear, parking, insurance, registration or repairs. Thus, commuting fuel savings alone do not produce a useful payback in this example.\n\nIf eliminating the car also avoids an **assumed** $1,000/year in insurance, registration and expected repairs, and replacement transport costs **an assumed** $200/year, the net annual advantage is about **$802**. The simple payback on $2,000 is then approximately **2.5 years**. This excludes sale proceeds, financing, discounting and residual value; it is highly sensitive to actual avoided costs and replacement trips. The $1,000 is an input for illustration, not an estimate of this old car’s expenses.\n\nIf 10 km is the **round-trip** distance, the commute-related distance, fuel savings and tailpipe CO₂ calculation above are approximately halved, all else equal.\n\n## Alternatives, comparison boundaries and limitations\n\n- **Keep both cars and use an e-bike for selected trips.** This preserves backup capacity and captures savings on displaced driving, but generally retains fixed costs and adds the bike’s costs.\n- **Use a conventional bicycle.** On a mostly flat route it may provide a lower-purchase-cost active option if the rider is comfortable with the effort and travel time. A trial can establish whether assistance adds enough practical value.\n- **Share the remaining car, use transit, carpool, rent or use taxis when needed.** These can cover trips the e-bike cannot, but their availability, cost and schedule must be included in a one-car comparison.\n- **Keep the old car until a repair or replacement decision.** Its paid-off status can make continuing ownership competitive. Conversely, an impending large repair can change the forward-looking calculation; the household should compare expected future costs, not the car’s original price.\n\nSome bike lanes do not establish a safe or comfortable continuous route. Collision exposure, rain, theft, battery condition, carrying capacity and access to secure charging and parking may affect whether riding is sustainable. Car travel also has risks; this report does not quantify a comparative safety outcome. Local e-bike rules and route access should be checked once the location and bike type are known.\n\n## Unresolved information and prioritized user questions\n\nThese questions are for a later decision discussion; answers are not requested in this session.\n\n1. **Is 10 km one way or round trip, and how many days per year would the rider realistically commute by e-bike?** Distance and actual substitution determine the scale of fuel, emissions and activity benefits.\n2. **What does the second car cost going forward, and what other trips or simultaneous household needs require it?** Insurance, registration, expected repairs, sale value and realistic replacement-transport costs determine whether removing the car creates material net savings.\n3. **Can the intended rider comfortably use the full route in ordinary traffic and rain, with suitable secure parking, charging and cargo capacity at both ends?** Practical usability determines how often the bike replaces a car trip and whether the household can rely on one car.\n\n## Readiness for source verification\n\nClaims **R1–R6** link to accessible source pages and identify the relevant sections or abstracts. They support general mechanisms and benchmark inputs, not household-specific outcomes. The cost inputs, riding frequency, travel speed and payback example are explicit assumptions and arithmetic requiring local validation. The emissions example uses a US average for a hypothetical gasoline car, so the actual vehicle and electricity supply should be checked before making a household-specific comparison.",
+      "responseSource": "agent",
+      "wordCount": 1536,
+      "signals": {},
+      "agent": {
+        "jobId": "job-mwieidd2-od5n",
+        "provider": "codex",
+        "model": "gpt-6.1-terra",
+        "sessionId": "01a1e14e-ea72-7cf2-97f1-e24be1b96b70",
+        "startedAt": "2026-11-15T22:23:27.782Z",
+        "finishedAt": "2026-11-15T22:24:14.329Z",
+        "durationMs": 46547,
+        "toolCalls": 1,
+        "usage": {
+          "inputTokens": 42043,
+          "outputTokens": 2260
+        }
+      },
+      "prompt": "# Session 01 — Independent Researcher\n\n**Input:** Research question and any explicitly provided scenario constraints. Start a **fresh chat**.\n\nInvestigate this decision:\n\n> Is an e-bike a worthwhile replacement for a household's second car on a 10 km commute?\n\nScenario constraints / scope supplied by the user:\n\n> Suburban household, mostly flat route with some bike lanes, mild winters with some rain, second car is paid off but old.\n\nYour goal is to identify **potential benefits** and the circumstances under which they may be achieved. Produce a self-contained report for independent review, not a definitive universal verdict.\n\n1. Prioritize **up to five** consequential benefits or advantages.\n2. Label supporting external factual claims **R1, R2, ...**, provide accessible, specific links and pinpoint source passages/sections where possible.\n3. Clearly distinguish directly sourced statements, assumptions, illustrative calculations, and user-dependent scenarios.\n4. Include major comparison boundaries (e.g., operating versus acquisition cost), plausible alternatives, and limitations without conducting the adversarial critic's job.\n5. Include **up to three questions** for the user whose answers could materially alter the expected benefits. Explain why each matters. Don't request answers in this chat.\n6. Don't invent user circumstances or claim to have inspected sources you cannot access. If a necessary external source is inaccessible, say so.\n\n**Output:** `01_research.md` with: question/scope; benefits and numbered claims; evidence/source links; illustrative calculations/assumptions; alternatives/boundaries; unresolved information and prioritized user questions; readiness for source verification.\n\nKeep the report focused rather than encyclopedic. Do not ask interactive follow-up questions.",
+      "inputFiles": [],
+      "inputsDigest": "d20e64f1",
+      "savedAt": "2026-11-15T22:24:14.329Z"
+    },
+    {
+      "id": "02",
+      "label": "Research Source Verifier",
+      "kind": "ai",
+      "outputFile": "02_source_verification.md",
+      "status": "done",
+      "response": "## Source-to-claim correspondence\n\n| ID | Result | Source location inspected | Explanation |\n|---|---|---|---|\n| R1 | **Supported** | [DOE, Active Transportation and Micromobility, e-bike paragraph](https://afdc.energy.gov/conserve/active-transportation) | DOE describes e-bikes as a potentially low-cost alternative to car use and says charging can cost less than $50 annually, even with daily riding. |\n| R2 | **Supported** | [DOE, Vehicle Cost Calculator methodology, Additional Annual Costs and Vehicle Purchase Cost and Net Present Value](https://afdc.energy.gov/calc/cost_calculator_methodology.html) | The methodology includes fuel, maintenance, tires, insurance, license and registration in its annual cost components. |\n| R3 | **Supported** | [Riiser et al., abstract and Results §3.2](https://www.frontiersin.org/journals/sports-and-active-living/articles/10.3389/fspor.2025.1653833/full) | The paper reports a cross-sectional study of 19 commuters using their own e-bikes. Mean intensity on flat segments was classified as moderate using its MET thresholds. |\n| R4 | **Supported** | [CDC, What Counts as Physical Activity for Adults, aerobic activity and “How do you know what is right for you?”](https://www.cdc.gov/physical-activity-basics/adding-adults/what-counts.html) | CDC gives the 150-minute moderate-intensity target, allows an equivalent combination and explains that intensity depends on the person. |\n| R5 | **Supported** | [EPA, Greenhouse Gas Emissions from a Typical Passenger Vehicle, emissions per mile](https://www.epa.gov/greenvehicles/greenhouse-gas-emissions-typical-passenger-vehicle) | EPA states approximately 400 g CO₂ per mile for the average passenger vehicle and notes variation with vehicle fuel and fuel economy. |\n| R6 | **Supported** | [Gojanovic et al., PubMed abstract, as returned in the search index](https://pubmed.ncbi.nlm.nih.gov/22005715/) | The indexed abstract reports 18 sedentary participants, a hilly setting and lower measured oxygen consumption and heart rate with both assisted settings than with the regular bike. The direct page fetch returned no abstract text; verification relies on the search-indexed copy of that same abstract. |\n\nExpressly labeled scenario assumptions and illustrative calculations are **out of scope** for source correspondence.\n\n## Material discrepancies\n\nNone identified. The direct PubMed page fetch did not expose the abstract, but its indexed abstract provided the material needed to check R6. No targeted correction to R1–R6 is requested.\n\n## Gate result: **Pass**",
+      "responseSource": "agent",
+      "wordCount": 317,
+      "signals": {
+        "gate": "Pass"
+      },
+      "agent": {
+        "jobId": "job-mwiejda3-fc0h",
+        "provider": "codex",
+        "model": "gpt-6.1-terra",
+        "sessionId": "01a1e14f-a048-75c3-aae6-1adb2d2f24dc",
+        "startedAt": "2026-11-15T22:24:14.331Z",
+        "finishedAt": "2026-11-15T22:24:42.168Z",
+        "durationMs": 27837,
+        "toolCalls": 3,
+        "usage": {
+          "inputTokens": 118256,
+          "outputTokens": 982
+        },
+        "trimmed": true
+      },
+      "prompt": "# Session 02 — Research Source Verifier\n\n**Input:** `01_research.md`. Start a **fresh chat**.\n\nYour **only** responsibility is **source-to-claim correspondence**: does each cited source actually say or substantiate what Report 01 attributes to it?\n\nFor each material claim R1, R2, etc.:\n- Open the cited source if possible and locate the relevant supporting material.\n- Identify any qualification, misquotation, wrong number, inaccessible citation, or unsupported leap in what is attributed to that source.\n- Classify **Supported / Partially Supported / Unsupported / Contradicted / Unverifiable**. These labels refer to correspondence, **not overall factual truth**.\n- Cite the specific passage/section you inspected; do not pretend to have accessed a blocked source.\n\n**Do not** decide whether the proposed choice is worthwhile, evaluate the study's underlying methodology, introduce new research, or audit the overall decision. If a claim is an expressly labeled scenario assumption rather than source-attributed fact, mark it out of scope.\n\n**Output:** `02_source_verification.md`: concise per-claim table (ID, result, source location, explanation), material discrepancies, and gate result **Pass / Revise / Block**. Request targeted correction rather than rewriting the original report. Do not ask the user questions.",
+      "inputFiles": [
+        "01_research.md"
+      ],
+      "inputsDigest": "36b0de9c",
+      "savedAt": "2026-11-15T22:24:42.168Z"
+    },
+    {
+      "id": "03",
+      "label": "Benefits Synthesizer",
+      "kind": "ai",
+      "outputFile": "03_benefits_summary.md",
+      "status": "done",
+      "response": "# Benefits Summary\n\nAn e-bike could replace some car trips on a 10 km commute, offering potential savings, physical activity and lower tailpipe emissions. The financial opportunity is greatest if the household can reliably give up its paid-off second car, including for trips beyond the commute.\n\n## Potential benefits\n\n- **Lower transport costs.** Each replaced drive can save fuel and some mileage-related wear; removing the car may also avoid insurance, registration and future repairs (R1–R2). In the illustrative scenario, fuel savings barely cover assumed bike upkeep; removing the car produces a modeled $802 annual advantage and roughly 2.5-year simple payback. Actual costs and replacement travel could change that result.\n- **Physical activity during travel.** Pedal-assist commuting can provide moderate-intensity activity (R3), contributing toward the CDC’s 150-minute weekly target (R4) if the rider pedals hard enough and the activity is additional.\n- **Lower car tailpipe emissions.** Replacing 3,000 km of driving in a hypothetical average gasoline car avoids about 0.75 tonnes of tailpipe CO₂ annually (R5). This excludes electricity, manufacturing and other lifecycle effects.\n- **A manageable commute.** Assistance can reduce effort compared with conventional cycling (R6), potentially making the ride more practical. Rain, traffic, route continuity, parking and cargo needs will affect actual use.\n\n## Evidence limits\n\nThe source-verification gate **passed**, with no material Revise or Block finding. “Supported” confirms that the cited sources correspond to the claims; it does not establish the outcome for this household. The activity studies were small, and the cost, frequency, speed and payback figures are illustrative assumptions.\n\n## Prioritized questions\n\n1. **Is 10 km one way, and how often would the rider realistically use the bike?** Distance and frequency scale the potential savings, activity and emissions benefits.\n2. **What are the car’s expected future costs, and which other trips require it?** These determine whether removing it creates meaningful net savings.\n3. **Is the full route comfortable and practical in ordinary weather, with secure parking and enough cargo capacity?** Usability determines how often the bike can replace driving.",
+      "responseSource": "agent",
+      "wordCount": 334,
+      "signals": {},
+      "agent": {
+        "jobId": "job-mwiejyre-t2ce",
+        "provider": "codex",
+        "model": "gpt-6.1-terra",
+        "sessionId": "01a1e150-0d07-7e83-801c-39aa68d02ce3",
+        "startedAt": "2026-11-15T22:24:42.170Z",
+        "finishedAt": "2026-11-15T22:24:53.494Z",
+        "durationMs": 11324,
+        "toolCalls": 0,
+        "usage": {
+          "inputTokens": 18308,
+          "outputTokens": 457
+        }
+      },
+      "prompt": "# Session 03 — Benefits Synthesizer\n\n**Input:** `01_research.md` and `02_source_verification.md`. Start a **fresh chat**.\n\nProduce a **user-facing benefits summary** using only the supplied reports. Do not add new evidence, exaggerate verification status, or make a final recommendation. A verifier's \"Supported\" label confirms source correspondence, not that the underlying claim is true in every setting.\n\n**Output:** `03_benefits_summary.md`, **300 words maximum**, titled **Benefits Summary**:\n1. Two-sentence opportunity overview.\n2. Up to five high-value potential benefits, each with conditions and claim IDs where useful.\n3. Critical evidence/source-correlation limitations, explicitly mentioning any material `Revise` or `Block` gate.\n4. **Up to three prioritized questions for the user**, each with a brief explanation of how the answer could change the expected benefit. Avoid cosmetic/background questions.\n\nDistinguish established source attribution from modeled or hypothetical upside. Do not ask for answers in this chat.",
+      "inputFiles": [
+        "01_research.md",
+        "02_source_verification.md"
+      ],
+      "inputsDigest": "f9115c98",
+      "savedAt": "2026-11-15T22:24:53.494Z"
+    },
+    {
+      "id": "04",
+      "label": "Adversarial Critic",
+      "kind": "ai",
+      "outputFile": "04_critique.md",
+      "status": "done",
+      "response": "# Independent Critique\n\nThe source-verification pass establishes correspondence between R1–R6 and their sources. It does not establish how often this household would use an e-bike, whether it could remove the second car, or whether the benefits would outweigh the tradeoffs.\n\n1. **C1 — Car ownership savings may not be avoidable.**  \n   **Affected benefit:** Lower transport costs (R1–R2).  \n   **Concern and why it matters:** **Logical objection.** The modeled $802 annual advantage depends heavily on eliminating the car and avoiding the assumed $1,000 in annual costs. Insurance savings may differ from the current premium after the remaining policy is repriced, and repair costs are uncertain. The example also omits sale proceeds and avoided mileage-related wear, which could improve the result. The 2.5-year payback is therefore a scenario, not a forecast.  \n   **When it applies and decision impact:** If simultaneous trips, caregiving, bad weather or other needs require retaining the car, most ownership costs remain. That could materially weaken the financial case; conversely, substantial avoidable repairs or a good sale price could strengthen it.\n\n2. **C2 — Actual substitution may be too low to justify the purchase.**  \n   **Affected benefits:** Fuel savings, emissions and practical commuting (R1, R5–R6).  \n   **Concern and why it matters:** **Hypothetical scenario.** The example assumes 150 replaced round trips annually. If only 75 occur and all other assumptions stay fixed, avoided fuel less electricity is about $126; after the assumed $250 bike maintenance and battery reserve, the annual balance is about **−$124 before initial purchase and avoided car wear**. Actual use also determines emissions reductions. A review found that e-bike uptake can replace both car trips and conventional cycling, with substitution depending on prior travel patterns. [Bourne et al., scoping review](https://pubmed.ncbi.nlm.nih.gov/32904492/)  \n   **When it applies and decision impact:** This matters if rain, work schedules, route discomfort or existing cycling reduce car trips replaced. Low use could make buying an e-bike unattractive financially, particularly if the car stays.\n\n3. **C3 — Route risk and reliability could outweigh the convenience of assistance.**  \n   **Affected benefit:** A manageable commute (R6).  \n   **Concern and why it matters:** The presence of some bike lanes does not establish that junctions and gaps are comfortable for this rider. A US injury-surveillance study found that motor-vehicle involvement in micromobility injuries was associated with greater hospital admission among emergency-department cases. Its injury data do **not** establish the probability of a crash on this route or a comparative risk per trip against driving. [CDC-hosted injury study](https://stacks.cdc.gov/view/cdc/260077)  \n   **When it applies and decision impact:** **Logical objection.** Difficult crossings, fast traffic, darkness, rain or insecure parking may deter regular use or make the risk unacceptable to the rider. A realistic route trial and fallback plan could materially change the decision.\n\n4. **C4 — The additional activity depends on the alternative.**  \n   **Affected benefit:** Physical activity (R3–R4).  \n   **Concern and why it matters:** The verified evidence supports the possibility of moderate activity; it does not establish a net health gain for this rider. A systematic review found e-cycling generally imposed lower acute physiological demands than conventional cycling, while commonly still reaching moderate intensity. Long-term evidence remains limited. [Xu et al., systematic review](https://pubmed.ncbi.nlm.nih.gov/42486466/)  \n   **When it applies and decision impact:** **Logical objection.** If the e-bike replaces driving and adds activity, the benefit may be meaningful. If it replaces conventional cycling or other exercise, the incremental benefit may be smaller or negative. A conventional bike could be a relevant comparator on the flat route if it would be used as often.\n\n5. **C5 — The emissions figure is a narrow displaced-tailpipe estimate.**  \n   **Affected benefit:** Lower emissions (R5).  \n   **Concern and why it matters:** **Logical objection.** The 0.75-tonne figure assumes 3,000 km of genuinely avoided driving in an average gasoline vehicle. It excludes the e-bike’s production and electricity, replacement trips, and any driving by a buyer of the sold car. It is therefore neither a household-wide nor a full lifecycle reduction.  \n   **When it applies and decision impact:** If the car is electric, is driven less than assumed, or remains in substantial use after sale, the claimed reduction could be much smaller. This could change the environmental comparison, though it does not erase the avoided tailpipe emissions from individual gasoline trips actually displaced.\n\n## Benefits that remain persuasive\n\nPedal-assist riding can provide meaningful activity, especially when it replaces sedentary travel, and assistance may make regular cycling feasible for someone who would otherwise drive. Each genuinely avoided gasoline trip also avoids that trip’s tailpipe emissions and fuel use. Removing the second car could produce substantial savings, but the size depends on avoidable costs and how the household covers its other trips.\n\n## Unresolved information and prioritized user questions\n\nThe calculations assume a one-way 10 km commute, a gasoline car and 150 replaced round trips per year. None is established for this household. Questions for a later discussion:\n\n1. **Is 10 km one way or round trip, and how many car commutes would the rider realistically replace across seasons?**\n2. **What are the second car’s expected future costs and sale value, and which simultaneous or noncommute trips would need another solution?**\n3. **Would the rider be comfortable on the entire route in ordinary traffic and weather, and are secure parking, charging and a workable backup available?**",
+      "responseSource": "agent",
+      "wordCount": 872,
+      "signals": {},
+      "agent": {
+        "jobId": "job-mwiek7i1-ykif",
+        "provider": "codex",
+        "model": "gpt-6.1-terra",
+        "sessionId": "01a1e150-3946-7043-afd6-d7227178357e",
+        "startedAt": "2026-11-15T22:24:53.497Z",
+        "finishedAt": "2026-11-15T22:25:23.984Z",
+        "durationMs": 30487,
+        "toolCalls": 1,
+        "usage": {
+          "inputTokens": 45982,
+          "outputTokens": 1335
+        }
+      },
+      "prompt": "# Session 04 — Independent Adversarial Critic\n\n**Input:** `01_research.md`, `02_source_verification.md`, `03_benefits_summary.md`. Start a **fresh chat**.\n\nIndependently challenge whether the **proposed benefits apply and are worth pursuing**. Your objective is not to force a \"no\" answer; it is to uncover material omissions, risks, hidden costs, alternative explanations, tradeoffs, and failure conditions.\n\n1. Prioritize **up to five** meaningful objections and label them **C1, C2, ...**.\n2. For each: name the affected benefit/claim, the concern, why it matters, when it applies, and whether it could alter the decision.\n3. Cite specific accessible evidence for **new external factual counterclaims**. Clearly mark **logical objections**, **hypothetical scenarios**, and **unverified conjectures** as such.\n4. Identify any well-supported benefits that remain persuasive; do not manufacture symmetrical opposition.\n5. Give **up to three questions for the user** that could materially change the severity/applicability of the cautions. Don't request answers in this chat.\n6. Respect the findings of the source verifier without assuming source correspondence proves the researcher's conclusion.\n\n**Output:** `04_critique.md`: concise numbered objections with supporting citations, surviving benefits, unresolved information, and prioritized user questions. Do **not** rewrite the original research or impose a final decision.",
+      "inputFiles": [
+        "01_research.md",
+        "02_source_verification.md",
+        "03_benefits_summary.md"
+      ],
+      "inputsDigest": "5c01519b",
+      "savedAt": "2026-11-15T22:25:23.984Z"
+    },
+    {
+      "id": "05",
+      "label": "Critique Source Verifier",
+      "kind": "ai",
+      "outputFile": "05_critique_verification.md",
+      "status": "done",
+      "response": "# Critique Source Verification\n\n## Source-to-claim correspondence\n\n| Objection | Result | Passage inspected and correspondence |\n|---|---|---|\n| **C1** | **Not Applicable — Nonfactual** | No new external source is cited for the objection. It presents conditional reasoning about avoidable ownership costs and the illustrative scenario. |\n| **C2** | **Supported** | [Bourne et al., scoping review](https://pubmed.ncbi.nlm.nih.gov/32904492/), abstract, as returned in the search index: the review reports that e-cycling uptake largely substitutes for conventional cycling or private car journeys, with the degree depending on the primary mode before acquisition. The direct PubMed fetch did not expose the abstract; the [full-text review, §§3.5 and 4.1](https://pmc.ncbi.nlm.nih.gov/articles/PMC7456196/), also describes substitution of both modes. |\n| **C3** | **Supported** | [CDC-hosted injury study](https://stacks.cdc.gov/view/cdc/260077), abstract, results and conclusion: among US emergency-department visits involving e-scooters, e-bikes and bicycles, hospital admission was consistently greater for visits involving a motor vehicle. The critique appropriately limits the finding to injury cases rather than treating it as a route-specific crash probability or comparative risk per trip. |\n| **C4** | **Supported** | [Xu et al., systematic review](https://pubmed.ncbi.nlm.nih.gov/42486466/), abstract, as returned in the search index: e-bikes generally produced lower acute physiological demands than conventional bicycles while commonly reaching at least moderate intensity; the authors call for more rigorous long-term studies. The direct PubMed fetch did not expose the abstract. |\n| **C5** | **Not Applicable — Nonfactual** | No new external source is cited for the objection. It identifies the boundaries and conditions of the previously sourced tailpipe estimate. |\n\n## Material discrepancies\n\nNone identified in the newly sourced counterclaims. The direct PubMed fetches for C2 and C4 did not return their abstracts; correspondence was checked against search-indexed copies of those abstracts, with the full-text review also available for C2.\n\n## Gate result: **Pass**\n\nNo targeted evidence correction is requested.",
+      "responseSource": "agent",
+      "wordCount": 284,
+      "signals": {
+        "gate": "Pass"
+      },
+      "agent": {
+        "jobId": "job-mwiekv0y-wsor",
+        "provider": "codex",
+        "model": "gpt-6.1-terra",
+        "sessionId": "01a1e150-b05d-7ca1-89e8-4169de247e8e",
+        "startedAt": "2026-11-15T22:25:23.987Z",
+        "finishedAt": "2026-11-15T22:25:43.066Z",
+        "durationMs": 19079,
+        "toolCalls": 2,
+        "usage": {
+          "inputTokens": 80006,
+          "outputTokens": 677
+        }
+      },
+      "prompt": "# Session 05 — Critique Source Verifier\n\n**Input:** `01_research.md`, `02_source_verification.md`, `03_benefits_summary.md`, `04_critique.md`. Start a **fresh chat**.\n\nYour **only** responsibility is to check **source-to-claim correspondence** for the **new factual counterclaims** the critic attributes to cited sources.\n\nFor each numbered objection C1, C2, etc.:\n- Identify any sourced external factual assertion and inspect the specific cited material where accessible.\n- Classify that correspondence **Supported / Partially Supported / Unsupported / Contradicted / Unverifiable**.\n- If an objection is purely logical, conditional, mathematical, or hypothetical with no attributed external source, classify source checking as **Not Applicable — Nonfactual**. This does **not** mean the objection is wrong.\n- State what section/passage was inspected and note blocked sources honestly.\n\n**Do not** adjudicate whether the critic wins, re-evaluate overall merit, or generate competing arguments. Do not expand into a general arithmetic/model audit.\n\n**Output:** `05_critique_verification.md`: compact objection-by-objection source correspondence table; material discrepancies; **Pass / Revise / Block** source gate. Request targeted evidence correction when needed. Do not ask interactive questions.",
+      "inputFiles": [
+        "01_research.md",
+        "02_source_verification.md",
+        "03_benefits_summary.md",
+        "04_critique.md"
+      ],
+      "inputsDigest": "d3ac8795",
+      "savedAt": "2026-11-15T22:25:43.066Z"
+    },
+    {
+      "id": "06",
+      "label": "Cautions Synthesizer",
+      "kind": "ai",
+      "outputFile": "06_cautions_summary.md",
+      "status": "done",
+      "response": "# Cautions Summary\n\n- **Car ownership costs may remain** (C1, **logically conditional**; affects transport savings). If simultaneous trips, caregiving or bad weather require the second car, insurance and other ownership costs may continue. The modeled $802 annual advantage and 2.5-year payback assume the car is removed; they are not forecasts. Avoidable repairs or sale proceeds could strengthen the case.\n- **Actual use may be too low** (C2, **source-correlated**, with a conditional cost scenario; affects savings and emissions). Rain, schedules or route discomfort could reduce the number of car trips replaced. At 75 rather than 150 annual round trips, the illustrative annual balance is about −$124 after bike upkeep, before purchase and avoided car wear.\n- **Route conditions may limit reliable use** (C3, **source-correlated** for injury severity; route suitability is **logically conditional**; affects practicality). Difficult crossings, traffic, darkness or insecure parking could deter riding. The cited injury study does not establish crash probability on this route.\n- **Added activity depends on what riding replaces** (C4, **source-correlated**; affects the health benefit). Replacing driving may add activity, while replacing conventional cycling or other exercise could yield a smaller or negative increment.\n- **The emissions estimate is narrow** (C5, **logically conditional**; affects the environmental benefit). The 0.75-tonne figure assumes displaced gasoline driving and covers tailpipe CO₂, not the full lifecycle or household-wide effects.\n\nAn unusable route or unavoidable need for two simultaneous car trips could be dealbreakers. Weather, carrying needs and occasional backup travel may be manageable tradeoffs, depending on the household.\n\nBoth verification gates passed; no material **Revise** or **Block** outcomes remain outstanding.\n\n## Prioritized questions for later consideration\n\n1. Across seasons, how many car commutes could the rider realistically replace, and is 10 km one way?\n2. Which trips require the second car, and what costs and sale proceeds would actually change if it were removed?\n3. Is the entire route comfortable, with secure parking and a workable backup in ordinary weather?",
+      "responseSource": "agent",
+      "wordCount": 324,
+      "signals": {},
+      "agent": {
+        "jobId": "job-mwiel9r1-sgt4",
+        "provider": "codex",
+        "model": "gpt-6.1-terra",
+        "sessionId": "01a1e150-faeb-7c61-8d2e-957e827468d5",
+        "startedAt": "2026-11-15T22:25:43.070Z",
+        "finishedAt": "2026-11-15T22:25:53.873Z",
+        "durationMs": 10803,
+        "toolCalls": 0,
+        "usage": {
+          "inputTokens": 20573,
+          "outputTokens": 452
+        }
+      },
+      "prompt": "# Session 06 — Cautions Synthesizer\n\n**Input:** All preceding five reports (`01_research.md` through `05_critique_verification.md`). Start a **fresh chat**.\n\nProduce the human-facing caution summary from the supplied record. Do not introduce new facts or treat an unsupported sourced objection as proven. A logical objection can matter even when source verification is not applicable.\n\n**Output:** `06_cautions_summary.md`, **300 words maximum**, titled **Cautions Summary**:\n1. Up to five high-consequence risks, pitfalls, or alternative considerations.\n2. For each, note which proposed benefit it changes, when it matters, and whether evidence was source-correlated, partly verified, unverifiable, or logically conditional (cite C IDs).\n3. Briefly distinguish genuine potential dealbreakers from manageable tradeoffs; do not force a negative outcome.\n4. Flag material verifier `Revise` or `Block` outcomes still outstanding.\n5. **Up to three prioritized questions for the user** whose answers would materially change the cautions. Avoid repeating questions from the Benefits Summary unless necessary; when unavoidable, consolidate them.\n\nNo definitive recommendation, new external research, or request for immediate conversational answers.",
+      "inputFiles": [
+        "01_research.md",
+        "02_source_verification.md",
+        "03_benefits_summary.md",
+        "04_critique.md",
+        "05_critique_verification.md"
+      ],
+      "inputsDigest": "f7da6918",
+      "savedAt": "2026-11-15T22:25:53.873Z"
+    },
+    {
+      "id": "gate",
+      "label": "Your Review",
+      "kind": "human",
+      "outputFile": "user_responses.md",
+      "status": "done",
+      "response": "# Human Review — Is an e-bike a worthwhile replacement for a household's second car on a 10 km commute?\n\n## Benefits summary answers\nQuestions raised:\n1. Is 10 km one way, and how often would the rider realistically use the bike? Distance and frequency scale the potential savings, activity and emissions benefits.\n2. What are the car’s expected future costs, and which other trips require it? These determine whether removing it creates meaningful net savings.\n3. Is the full route comfortable and practical in ordinary weather, with secure parking and enough cargo capacity? Usability determines how often the bike can replace driving.\n\nAnswer:\n\n1. The commute is 10 km each way. I'd realistically ride three or four days a week, and drive on the really wet days or when I have to carry things.\n2. The old car would probably need around $1,000 of repairs in the next year or two. We'd still need a car for the occasional school run and a monthly trip to see family, but we wouldn't be using the second one every day.\n3. The route is mostly flat with bike lanes for most of it, but there's one busy roundabout I don't love. My workplace has a covered rack, but it isn't locked. We get rain on maybe a quarter of the days in winter.\n\n## Cautions summary answers\nQuestions raised:\n1. Across seasons, how many car commutes could the rider realistically replace, and is 10 km one way?\n2. Which trips require the second car, and what costs and sale proceeds would actually change if it were removed?\n3. Is the entire route comfortable, with secure parking and a workable backup in ordinary weather?\n\nAnswer:\n\n1. I'd say 100 to 120 of the 220 or so working days a year, so a bit under 75 percent in good months and a lot less in winter.\n2. The second car is needed when both of us have to be somewhere at the same time, which happens maybe once or twice a month. Selling it would bring in about $2,500. Insurance on it is about $600 a year.\n3. Mostly yes, apart from that roundabout, which has a cycle path around it that I could use. I'd buy a good lock and keep a rain jacket and a pannier at the office. For backup we'd rent a car or use a taxi for the rare double-booking days.\n\n## Additional context / corrections\n- We would keep one car. Budget for the e-bike is about $2,000 to $2,500, and we'd want to try one on the route before buying.\n\n## Authorization\n- [x] Proceed to Session 07\n- [ ] Run another round with this context\n- [ ] Pause\n- [ ] Stop the investigation\n",
+      "fields": {
+        "bq": "1. The commute is 10 km each way. I'd realistically ride three or four days a week, and drive on the really wet days or when I have to carry things.\n2. The old car would probably need around $1,000 of repairs in the next year or two. We'd still need a car for the occasional school run and a monthly trip to see family, but we wouldn't be using the second one every day.\n3. The route is mostly flat with bike lanes for most of it, but there's one busy roundabout I don't love. My workplace has a covered rack, but it isn't locked. We get rain on maybe a quarter of the days in winter.",
+        "cq": "1. I'd say 100 to 120 of the 220 or so working days a year, so a bit under 75 percent in good months and a lot less in winter.\n2. The second car is needed when both of us have to be somewhere at the same time, which happens maybe once or twice a month. Selling it would bring in about $2,500. Insurance on it is about $600 a year.\n3. Mostly yes, apart from that roundabout, which has a cycle path around it that I could use. I'd buy a good lock and keep a rain jacket and a pannier at the office. For backup we'd rent a car or use a taxi for the rare double-booking days.",
+        "ctx": "We would keep one car. Budget for the e-bike is about $2,000 to $2,500, and we'd want to try one on the route before buying.",
+        "auth": "proceed"
+      },
+      "responseSource": "form",
+      "inputFiles": [
+        "03_benefits_summary.md",
+        "06_cautions_summary.md"
+      ],
+      "inputsDigest": "72a4b543",
+      "savedAt": "2026-11-15T22:26:06.321Z"
+    },
+    {
+      "id": "07",
+      "label": "Decision Synthesizer",
+      "kind": "ai",
+      "outputFile": "07_decision_brief.md",
+      "status": "done",
+      "response": "# User-Informed Decision Brief\n\n## Current assessment\n\nAn e-bike is a promising replacement for many second-car commutes, but selling the car is viable only if the household can manage occasional simultaneous trips affordably. The proposed route trial and a household-specific cost check should come before a purchase or sale.\n\n## Relevant benefits and their conditions\n\n- **Costs:** The user reports $600 a year in second-car insurance, a possible $1,000 repair in the next year or two, and approximately $2,500 in sale proceeds. These are user estimates, not independently verified. Avoiding those costs could make the $2,000–$2,500 bike worthwhile, but backup travel and bike expenses matter. The earlier $802 annual advantage and 2.5-year payback were illustrative, not forecasts.\n- **Activity:** Replacing car trips may add physical activity; pedal-assist riding can reach moderate intensity, depending on the rider and effort (R3–R4). The household’s actual health benefit remains uncertain.\n- **Emissions:** At the user’s estimated 100–120 round trips a year, 20 km per round trip would replace 2,000–2,400 km of driving. Applying the earlier average-car factor gives approximately **0.50–0.60 tonnes of tailpipe CO₂ avoided annually**, assuming those trips otherwise use a gasoline car (R5). This excludes electricity and lifecycle effects.\n- **Practicality:** The mostly flat route, cycle path around the roundabout, covered rack and planned pannier support use. These are user-reported conditions; the route trial will test them.\n\n## Relevant cautions and remaining uncertainties\n\nRain and carrying needs reduce expected use (C2). The roundabout detour reduces a concern, but comfort and the unlocked rack remain practical uncertainties (C3). The household would retain one car, yet the cost and availability of rentals or taxis for one or two monthly conflicts are unresolved (C1). Activity gains depend on what riding replaces (C4), and the emissions estimate is limited to tailpipe CO₂ (C5).\n\nBoth source-correspondence gates passed; that verifies correspondence for the cited claims, not the household estimates or outcomes.\n\n## Suggested next action: **Proceed conditionally**\n\nTrial an e-bike on the complete route, including the roundabout path and parking. Before buying or selling, compare avoidable second-car costs and sale proceeds against bike purchase and upkeep plus realistic backup costs. The human remains the final decision-maker.\n\n## Material unanswered questions\n\n1. What would the required rentals or taxis cost and are they available when needed?\n2. Which other annual car costs and repair expenses would actually be avoided?\n3. Does the route and parking feel acceptable during the trial, including in ordinary wet weather?",
+      "responseSource": "agent",
+      "wordCount": 411,
+      "signals": {
+        "action": "Proceed conditionally"
+      },
+      "agent": {
+        "jobId": "job-mwielrsc-w5d4",
+        "provider": "codex",
+        "model": "gpt-6.1-terra",
+        "sessionId": "01a1e151-563c-7a81-a279-0be3aead6d16",
+        "startedAt": "2026-11-15T22:26:06.444Z",
+        "finishedAt": "2026-11-15T22:26:19.640Z",
+        "durationMs": 13196,
+        "toolCalls": 0,
+        "usage": {
+          "inputTokens": 18317,
+          "outputTokens": 569
+        }
+      },
+      "prompt": "# Session 07 — User-Informed Decision Synthesizer\n\n**Input:** `03_benefits_summary.md`, `06_cautions_summary.md`, `02_source_verification.md`, `05_critique_verification.md`, and `user_responses.md`. Provide `01_research.md` and `04_critique.md` as well if claim-level context is needed. Start a **fresh chat**.\n\nYou are combining **two independently developed perspectives and the user's answers** into a brief, user-specific decision aid. The user has already reviewed the summaries and chosen to proceed.\n\n1. Explain which potential benefits apply or fail to apply based on supplied user context.\n2. Explain which cautions are applicable, reduced, increased, or still unresolved.\n3. Maintain the distinction between **verified source correspondence**, reasoned inference, scenario assumptions, and factual claims the user supplied but no independent source checked.\n4. Do not invent new research, silently treat user assertions as external verification, or assert certainty where source/reasoning gaps remain.\n5. If critical questions cannot be resolved with the record, recommend further investigation instead of deciding by fiat.\n6. Refer back to report IDs/claim IDs where it materially improves traceability.\n\n**Output:** `07_decision_brief.md`, **400 words maximum**, titled **User-Informed Decision Brief**:\n- Current assessment (2–3 sentences)\n- Relevant benefits and their conditions\n- Relevant cautions and remaining uncertainties\n- **Suggested next action:** Proceed / Proceed conditionally / Investigate further / Do not proceed — with brief rationale\n- At most three material unanswered questions\n\nThis is **decision support**. The human remains the final decision-maker. Do not launch another iteration or ask interactive questions.",
+      "inputFiles": [
+        "03_benefits_summary.md",
+        "06_cautions_summary.md",
+        "02_source_verification.md",
+        "05_critique_verification.md",
+        "user_responses.md"
+      ],
+      "inputsDigest": "8c0b068c",
+      "savedAt": "2026-11-15T22:26:54.924Z"
+    }
+  ],
+  "integrity": {
+    "algorithm": "sha256",
+    "contentHash": "sha256:d7fd7e09686b2c3d0b00558ff46947a3893ca1810bae9c50fe14fc8935bc432e",
+    "computedAt": "2026-11-15T22:26:54.935Z"
+  }
+}

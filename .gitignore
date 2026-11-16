@@ -1,0 +1,11 @@
+node_modules/
+.next/
+next-env.d.ts
+*.tsbuildinfo
+# Saved runs and uploaded workflows live here
+data/
+*.log
+.env*
+!.env.example
+
+docker-compose.override.yml

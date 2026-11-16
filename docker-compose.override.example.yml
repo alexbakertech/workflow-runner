@@ -1,0 +1,9 @@
+# Copy this file to docker-compose.override.yml; Compose loads it automatically.
+# Create the host folders first: mkdir -p ~/.claude ~/.pi/agent
+# Otherwise Docker may create them as root. The app loads none of the host's
+# Claude settings, hooks or plugins.
+services:
+  workflow-runner:
+    volumes:
+      - ${USERPROFILE:-~}/.claude:/home/node/.claude
+      - ${USERPROFILE:-~}/.pi/agent:/home/node/.pi/agent

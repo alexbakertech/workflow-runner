@@ -1,0 +1,31 @@
+services:
+  workflow-runner:
+    build: .
+    image: workflow-runner:latest
+    container_name: workflow-runner
+    ports:
+      # Only this computer can reach the app. Use "3000:3000" to open it to other devices on the network.
+      - "127.0.0.1:3000:3000"
+    environment:
+      # Off because only this computer can reach the app (see ports). If you open the port to other devices,
+      # set ACCESS_TOKEN= (empty) to use data/access-token.txt, or set a token of your own.
+      ACCESS_TOKEN: ${ACCESS_TOKEN-off}
+      # Optional API keys, instead of signing in with a Claude or ChatGPT subscription. Set them in .env.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY-}
+    volumes:
+      # Same folder the dev server uses, so existing runs carry over and stay on this machine.
+      - ./data:/app/data
+      # Claude sign-in and pi's model list live in volumes. To share the host's ~/.claude and ~/.pi/agent
+      # instead, copy docker-compose.override.example.yml to docker-compose.override.yml.
+      - claude-home:/home/node/.claude
+      - pi-agent:/home/node/.pi/agent
+      # Codex: its own sign-in inside the container (see README). Not shared with the host, because Codex keeps
+      # SQLite databases in ~/.codex that must not be opened from two machines at once.
+      - codex-home:/home/node/.codex
+    restart: unless-stopped
+
+volumes:
+  claude-home:
+  pi-agent:
+  codex-home:

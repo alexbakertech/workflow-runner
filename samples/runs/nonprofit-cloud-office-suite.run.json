@@ -1,0 +1,617 @@
+{
+  "format": "workflow-run",
+  "formatVersion": 1,
+  "id": "run-mwiemvdj-3t69",
+  "title": "Nonprofit move to a cloud office suite?",
+  "tag": "adversarial-research@3.6.1#2f591b94",
+  "status": "completed",
+  "createdAt": "2026-11-15T22:26:57.751Z",
+  "updatedAt": "2026-11-15T22:31:45.680Z",
+  "completedAt": "2026-11-15T22:31:45.669Z",
+  "variables": {
+    "question": "Should a small nonprofit move its email and files from self-hosted servers to a cloud office suite?",
+    "scope": "About 25 staff and volunteers, one part-time IT contractor, an aging on-site server, limited budget, handles some donor personal data."
+  },
+  "template": {
+    "id": "adversarial-research",
+    "title": "Independent Adversarial Research",
+    "version": "3.6.1",
+    "sourceFile": "adversarial-research-v3.json",
+    "hash": "sha256:2f591b9411ba9c7e110cacc5a81834cd485d85d16b3ca61dd5288b3923b9cada",
+    "definition": {
+      "format": "workflow-template",
+      "formatVersion": 1,
+      "id": "adversarial-research",
+      "title": "Independent Adversarial Research",
+      "version": "3.6.1",
+      "description": "Seven isolated AI sessions plus one human review. A researcher argues for the decision, a critic argues against it, two verifiers check that cited sources say what is claimed, and a final session combines everything with your own answers into a short decision brief. If the first pass leaves too many gaps, you can run another round that builds on it.",
+      "intro": [
+        "Every session happens in a brand-new chat. Use any AI tool you like (ChatGPT, Claude, Gemini…) and switch models between sessions if you want — just never continue a previous chat.",
+        "For each session this guide gives you two things to copy: the context (the reports produced by earlier sessions) and the prompt. Paste both into the new chat as one message and send it.",
+        "Copy the full reply back into this guide. It becomes the input for later sessions, so you never have to manage files yourself.",
+        "Verification sessions only check that sources say what was claimed — not that the claims are true. If a verifier asks for a revision, you decide whether to fix it first or carry the flag forward.",
+        "After Session 06 you review both summaries, answer their questions in your own words, and decide what happens next: get the decision brief, pause, stop, or run another round that starts again at Session 01 with everything gathered so far. Nothing here makes the decision for you."
+      ],
+      "titleVariable": "question",
+      "variables": [
+        {
+          "key": "question",
+          "label": "Decision to investigate",
+          "required": true,
+          "multiline": true,
+          "placeholder": "e.g. Is replacing a gas furnace with a heat pump worthwhile for a typical household?",
+          "help": "Phrase it as a decision you are considering, not a universal claim."
+        },
+        {
+          "key": "scope",
+          "label": "Scenario / constraints (optional)",
+          "multiline": true,
+          "placeholder": "e.g. Detached house in a cold-winter climate, planning to stay 10+ years, would pay upfront.",
+          "help": "Any baseline facts the researcher should assume. Leave blank to have it document assumptions and ask you later."
+        }
+      ],
+      "steps": [
+        {
+          "id": "01",
+          "label": "Independent Researcher",
+          "kind": "ai",
+          "description": "Researches the question and lists up to five potential benefits, each backed by numbered claims (R1, R2…) with source links.",
+          "inputs": [],
+          "prompt": "# Session 01 — Independent Researcher\n\n**Input:** Research question and any explicitly provided scenario constraints. Start a **fresh chat**.\n\nInvestigate this decision:\n\n> {{question}}{{#scope}}\n\nScenario constraints / scope supplied by the user:\n\n> {{scope}}{{/scope}}\n\n{{#priorRound}}This is **round {{round}}** of this investigation. The attached `round-{{prevRound}}_*` files are the previous round's reports, verifications, and the user's answers (including any decision brief, follow-up research, and answers to its open questions). Treat the user's answers and context as their scenario. Build on the earlier work rather than repeating it: re-check claims that were disputed, close the gaps and open questions it left, and look for evidence the earlier round missed. Don't ask the user questions they already answered.\n\n{{/priorRound}}Your goal is to identify **potential benefits** and the circumstances under which they may be achieved. Produce a self-contained report for independent review, not a definitive universal verdict.\n\n1. Prioritize **up to five** consequential benefits or advantages.\n2. Label supporting external factual claims **R1, R2, ...**, provide accessible, specific links and pinpoint source passages/sections where possible.\n3. Clearly distinguish directly sourced statements, assumptions, illustrative calculations, and user-dependent scenarios.\n4. Include major comparison boundaries (e.g., operating versus acquisition cost), plausible alternatives, and limitations without conducting the adversarial critic's job.\n5. Include **up to three questions** for the user whose answers could materially alter the expected benefits. Explain why each matters. Don't request answers in this chat.\n6. Don't invent user circumstances or claim to have inspected sources you cannot access. If a necessary external source is inaccessible, say so.\n\n**Output:** `01_research.md` with: question/scope; benefits and numbered claims; evidence/source links; illustrative calculations/assumptions; alternatives/boundaries; unresolved information and prioritized user questions; readiness for source verification.\n\nKeep the report focused rather than encyclopedic. Do not ask interactive follow-up questions.",
+          "output": {
+            "file": "01_research.md",
+            "title": "Research report"
+          },
+          "checklist": [
+            "The report actually addresses your question and scope",
+            "Claims are numbered R1, R2… with links you can open",
+            "Sourced facts are separated from assumptions and illustrative calculations",
+            "You opened one or two important links and they look relevant"
+          ]
+        },
+        {
+          "id": "02",
+          "label": "Research Source Verifier",
+          "kind": "ai",
+          "description": "Checks whether each cited source really says what the research report claims. It does not judge whether the decision is good.",
+          "inputs": [
+            "01"
+          ],
+          "prompt": "# Session 02 — Research Source Verifier\n\n**Input:** `01_research.md`. Start a **fresh chat**.\n\nYour **only** responsibility is **source-to-claim correspondence**: does each cited source actually say or substantiate what Report 01 attributes to it?\n\nFor each material claim R1, R2, etc.:\n- Open the cited source if possible and locate the relevant supporting material.\n- Identify any qualification, misquotation, wrong number, inaccessible citation, or unsupported leap in what is attributed to that source.\n- Classify **Supported / Partially Supported / Unsupported / Contradicted / Unverifiable**. These labels refer to correspondence, **not overall factual truth**.\n- Cite the specific passage/section you inspected; do not pretend to have accessed a blocked source.\n\n**Do not** decide whether the proposed choice is worthwhile, evaluate the study's underlying methodology, introduce new research, or audit the overall decision. If a claim is an expressly labeled scenario assumption rather than source-attributed fact, mark it out of scope.\n\n**Output:** `02_source_verification.md`: concise per-claim table (ID, result, source location, explanation), material discrepancies, and gate result **Pass / Revise / Block**. Request targeted correction rather than rewriting the original report. Do not ask the user questions.",
+          "output": {
+            "file": "02_source_verification.md",
+            "title": "Research source verification"
+          },
+          "checklist": [
+            "There is a per-claim table with a result for each R claim",
+            "The report ends with a gate result: Pass, Revise or Block",
+            "If any important claim is Unsupported or Contradicted, you have decided whether to correct Session 01 first"
+          ],
+          "signals": [
+            {
+              "key": "gate",
+              "label": "Source gate",
+              "match": "gate",
+              "options": [
+                "Pass",
+                "Revise",
+                "Block"
+              ],
+              "warnOn": [
+                "Revise",
+                "Block"
+              ],
+              "warning": "The verifier flagged citation problems. The workflow recommends going back to the authoring session (in its original chat), asking it for a targeted correction of the flagged claims, pasting the corrected report into that step, and then re-running this verification. You can also continue and carry the flag forward — later sessions are instructed to mention it.",
+              "fix": {
+                "step": "01",
+                "on": [
+                  "Revise"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "03",
+          "label": "Benefits Synthesizer",
+          "kind": "ai",
+          "description": "Condenses the research and its verification into a short, user-facing Benefits Summary with up to three questions for you.",
+          "inputs": [
+            "01",
+            "02"
+          ],
+          "prompt": "# Session 03 — Benefits Synthesizer\n\n**Input:** `01_research.md` and `02_source_verification.md`. Start a **fresh chat**.\n\nProduce a **user-facing benefits summary** using only the supplied reports. Do not add new evidence, exaggerate verification status, or make a final recommendation. A verifier's \"Supported\" label confirms source correspondence, not that the underlying claim is true in every setting.\n\n**Output:** `03_benefits_summary.md`, **300 words maximum**, titled **Benefits Summary**:\n1. Two-sentence opportunity overview.\n2. Up to five high-value potential benefits, each with conditions and claim IDs where useful.\n3. Critical evidence/source-correlation limitations, explicitly mentioning any material `Revise` or `Block` gate.\n4. **Up to three prioritized questions for the user**, each with a brief explanation of how the answer could change the expected benefit. Avoid cosmetic/background questions.\n\nDistinguish established source attribution from modeled or hypothetical upside. Do not ask for answers in this chat.",
+          "output": {
+            "file": "03_benefits_summary.md",
+            "title": "Benefits summary"
+          },
+          "wordLimit": 300,
+          "feature": true,
+          "checklist": [
+            "Titled “Benefits Summary” and roughly 300 words or fewer",
+            "Mentions the verifier’s gate result if it was Revise or Block",
+            "Ends with up to three questions for you"
+          ]
+        },
+        {
+          "id": "04",
+          "label": "Adversarial Critic",
+          "kind": "ai",
+          "description": "Independently challenges the benefits — hidden costs, risks, failure conditions and alternatives — as numbered objections (C1, C2…).",
+          "inputs": [
+            "01",
+            "02",
+            "03"
+          ],
+          "prompt": "# Session 04 — Independent Adversarial Critic\n\n**Input:** `01_research.md`, `02_source_verification.md`, `03_benefits_summary.md`. Start a **fresh chat**.\n\nIndependently challenge whether the **proposed benefits apply and are worth pursuing**. Your objective is not to force a \"no\" answer; it is to uncover material omissions, risks, hidden costs, alternative explanations, tradeoffs, and failure conditions.\n\n1. Prioritize **up to five** meaningful objections and label them **C1, C2, ...**.\n2. For each: name the affected benefit/claim, the concern, why it matters, when it applies, and whether it could alter the decision.\n3. Cite specific accessible evidence for **new external factual counterclaims**. Clearly mark **logical objections**, **hypothetical scenarios**, and **unverified conjectures** as such.\n4. Identify any well-supported benefits that remain persuasive; do not manufacture symmetrical opposition.\n5. Give **up to three questions for the user** that could materially change the severity/applicability of the cautions. Don't request answers in this chat.\n6. Respect the findings of the source verifier without assuming source correspondence proves the researcher's conclusion.\n\n**Output:** `04_critique.md`: concise numbered objections with supporting citations, surviving benefits, unresolved information, and prioritized user questions. Do **not** rewrite the original research or impose a final decision.",
+          "output": {
+            "file": "04_critique.md",
+            "title": "Adversarial critique"
+          },
+          "checklist": [
+            "Objections are numbered C1, C2… and are substantive, not cosmetic",
+            "New factual counterclaims have sources; logical objections are labeled as such",
+            "It names the benefits that still hold up"
+          ]
+        },
+        {
+          "id": "05",
+          "label": "Critique Source Verifier",
+          "kind": "ai",
+          "description": "Checks that the critic’s new factual counterclaims match their cited sources. Purely logical objections are marked Not Applicable.",
+          "inputs": [
+            "01",
+            "02",
+            "03",
+            "04"
+          ],
+          "prompt": "# Session 05 — Critique Source Verifier\n\n**Input:** `01_research.md`, `02_source_verification.md`, `03_benefits_summary.md`, `04_critique.md`. Start a **fresh chat**.\n\nYour **only** responsibility is to check **source-to-claim correspondence** for the **new factual counterclaims** the critic attributes to cited sources.\n\nFor each numbered objection C1, C2, etc.:\n- Identify any sourced external factual assertion and inspect the specific cited material where accessible.\n- Classify that correspondence **Supported / Partially Supported / Unsupported / Contradicted / Unverifiable**.\n- If an objection is purely logical, conditional, mathematical, or hypothetical with no attributed external source, classify source checking as **Not Applicable — Nonfactual**. This does **not** mean the objection is wrong.\n- State what section/passage was inspected and note blocked sources honestly.\n\n**Do not** adjudicate whether the critic wins, re-evaluate overall merit, or generate competing arguments. Do not expand into a general arithmetic/model audit.\n\n**Output:** `05_critique_verification.md`: compact objection-by-objection source correspondence table; material discrepancies; **Pass / Revise / Block** source gate. Request targeted evidence correction when needed. Do not ask interactive questions.",
+          "output": {
+            "file": "05_critique_verification.md",
+            "title": "Critique source verification"
+          },
+          "checklist": [
+            "There is a table covering each C objection",
+            "The report ends with a source gate: Pass, Revise or Block",
+            "If material citations failed, you have decided whether to correct Session 04 first"
+          ],
+          "signals": [
+            {
+              "key": "gate",
+              "label": "Source gate",
+              "match": "gate",
+              "options": [
+                "Pass",
+                "Revise",
+                "Block"
+              ],
+              "warnOn": [
+                "Revise",
+                "Block"
+              ],
+              "warning": "The verifier flagged citation problems. The workflow recommends going back to the authoring session (in its original chat), asking it for a targeted correction of the flagged claims, pasting the corrected report into that step, and then re-running this verification. You can also continue and carry the flag forward — later sessions are instructed to mention it.",
+              "fix": {
+                "step": "04",
+                "on": [
+                  "Revise"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "06",
+          "label": "Cautions Synthesizer",
+          "kind": "ai",
+          "description": "Condenses the critique and its verification into a short Cautions Summary with up to three more questions for you.",
+          "inputs": [
+            "01",
+            "02",
+            "03",
+            "04",
+            "05"
+          ],
+          "prompt": "# Session 06 — Cautions Synthesizer\n\n**Input:** All preceding five reports (`01_research.md` through `05_critique_verification.md`). Start a **fresh chat**.\n\nProduce the human-facing caution summary from the supplied record. Do not introduce new facts or treat an unsupported sourced objection as proven. A logical objection can matter even when source verification is not applicable.\n\n**Output:** `06_cautions_summary.md`, **300 words maximum**, titled **Cautions Summary**:\n1. Up to five high-consequence risks, pitfalls, or alternative considerations.\n2. For each, note which proposed benefit it changes, when it matters, and whether evidence was source-correlated, partly verified, unverifiable, or logically conditional (cite C IDs).\n3. Briefly distinguish genuine potential dealbreakers from manageable tradeoffs; do not force a negative outcome.\n4. Flag material verifier `Revise` or `Block` outcomes still outstanding.\n5. **Up to three prioritized questions for the user** whose answers would materially change the cautions. Avoid repeating questions from the Benefits Summary unless necessary; when unavoidable, consolidate them.\n\nNo definitive recommendation, new external research, or request for immediate conversational answers.",
+          "output": {
+            "file": "06_cautions_summary.md",
+            "title": "Cautions summary"
+          },
+          "wordLimit": 300,
+          "feature": true,
+          "checklist": [
+            "Titled “Cautions Summary” and roughly 300 words or fewer",
+            "Separates potential dealbreakers from manageable tradeoffs",
+            "Ends with up to three questions for you"
+          ]
+        },
+        {
+          "id": "gate",
+          "label": "Your Review",
+          "kind": "human",
+          "description": "Read both summaries, answer their questions in your own words, add any context, and decide what to do next. No AI is involved in this step.",
+          "inputs": [
+            "03",
+            "06"
+          ],
+          "output": {
+            "file": "user_responses.md",
+            "title": "Your responses"
+          },
+          "fields": [
+            {
+              "key": "bq",
+              "type": "text",
+              "label": "Benefits summary — your answers",
+              "questionsFrom": "03",
+              "placeholder": "Answer whichever questions apply, in any order, and add anything else relevant to the benefits.",
+              "help": "Write freely. Skipping a question is fine — the next session treats it as unknown."
+            },
+            {
+              "key": "cq",
+              "type": "text",
+              "label": "Cautions summary — your answers",
+              "questionsFrom": "06",
+              "placeholder": "Answer whichever questions apply, in any order, and add anything else relevant to the cautions.",
+              "help": "Write freely. Skipping a question is fine — the next session treats it as unknown."
+            },
+            {
+              "key": "ctx",
+              "type": "text",
+              "label": "Additional context or corrections",
+              "placeholder": "Constraints, existing equipment, budget, usage, preferences… or leave blank for none.",
+              "help": "Facts you add here are treated as your scenario, not as independently verified evidence."
+            },
+            {
+              "key": "auth",
+              "type": "decision",
+              "label": "What would you like to do?",
+              "options": [
+                {
+                  "value": "proceed",
+                  "label": "Proceed to Session 07",
+                  "description": "Get a conditional decision brief that combines both summaries with your answers.",
+                  "effect": "continue"
+                },
+                {
+                  "value": "loop",
+                  "label": "Run another round with this context",
+                  "description": "Continue this run with another round: back to Session 01 with everything from this round — the reports, verifications, and your answers — as input, so the new research builds on it instead of starting over. This round stays in the run and can be viewed from its summary.",
+                  "effect": "loop",
+                  "carryInto": [
+                    "01"
+                  ]
+                },
+                {
+                  "value": "pause",
+                  "label": "Pause",
+                  "description": "Stop here for now to clarify something or re-verify a claim. You can resume this run later.",
+                  "effect": "pause"
+                },
+                {
+                  "value": "stop",
+                  "label": "Stop the investigation",
+                  "description": "End the run here. The summary page will show everything gathered so far.",
+                  "effect": "stop"
+                }
+              ]
+            }
+          ],
+          "outputTemplate": "# Human Review — {{question}}\n\n## Benefits summary answers\n{{bq}}\n\n## Cautions summary answers\n{{cq}}\n\n## Additional context / corrections\n{{ctx}}\n\n## Authorization\n{{auth}}\n"
+        },
+        {
+          "id": "07",
+          "label": "Decision Synthesizer",
+          "kind": "ai",
+          "description": "Combines both perspectives with your answers into a short, conditional decision brief with a suggested next action.",
+          "inputs": [
+            "03",
+            "06",
+            "02",
+            "05",
+            "gate"
+          ],
+          "optionalInputs": [
+            "01",
+            "04"
+          ],
+          "prompt": "# Session 07 — User-Informed Decision Synthesizer\n\n**Input:** `03_benefits_summary.md`, `06_cautions_summary.md`, `02_source_verification.md`, `05_critique_verification.md`, and `user_responses.md`. Provide `01_research.md` and `04_critique.md` as well if claim-level context is needed. Start a **fresh chat**.\n\nYou are combining **two independently developed perspectives and the user's answers** into a brief, user-specific decision aid. The user has already reviewed the summaries and chosen to proceed.{{#followUp}}\n\n**Follow-up:** An earlier version of this brief recommended investigating further. Since then: `follow-up_previous_*` is the latest earlier version of this brief, `follow-up_answers.md` holds what the user added, and `follow-up_research.md` (if present) holds findings from research on its open questions. Write an updated brief that takes them into account, and say briefly what changed and why. Treat the user's answers as their stated scenario, not as independently verified evidence. Research findings count as sourced only where they cite a source.\n\nOnly recommend **Investigate further** again if more research could still settle a critical question. If what remains can only be answered by the user (their own quotes, bills, plans, approvals, or preferences), recommend **Proceed conditionally** or **Do not proceed** instead, and state those answers as the conditions.{{/followUp}}\n\n1. Explain which potential benefits apply or fail to apply based on supplied user context.\n2. Explain which cautions are applicable, reduced, increased, or still unresolved.\n3. Maintain the distinction between **verified source correspondence**, reasoned inference, scenario assumptions, and factual claims the user supplied but no independent source checked.\n4. Do not invent new research, silently treat user assertions as external verification, or assert certainty where source/reasoning gaps remain.\n5. If critical questions cannot be resolved with the record, recommend further investigation instead of deciding by fiat.\n6. Refer back to report IDs/claim IDs where it materially improves traceability.\n\n**Output:** `07_decision_brief.md`, **400 words maximum**, titled **User-Informed Decision Brief**:\n- Current assessment (2–3 sentences)\n- Relevant benefits and their conditions\n- Relevant cautions and remaining uncertainties\n- **Suggested next action:** Proceed / Proceed conditionally / Investigate further / Do not proceed — with brief rationale\n- At most three material unanswered questions\n\nThis is **decision support**. The human remains the final decision-maker. Do not launch another iteration or ask interactive questions.",
+          "output": {
+            "file": "07_decision_brief.md",
+            "title": "Decision brief"
+          },
+          "wordLimit": 400,
+          "feature": true,
+          "checklist": [
+            "Titled “User-Informed Decision Brief” and roughly 400 words or fewer",
+            "Gives a suggested next action with a rationale",
+            "Your own facts are not presented as independently verified"
+          ],
+          "signals": [
+            {
+              "key": "action",
+              "label": "Suggested next action",
+              "match": "next action",
+              "options": [
+                "Proceed conditionally",
+                "Investigate further",
+                "Do not proceed",
+                "Proceed"
+              ],
+              "followUp": [
+                "Investigate further"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "position": 7,
+  "progress": {
+    "completed": 8,
+    "total": 8
+  },
+  "steps": [
+    {
+      "id": "01",
+      "label": "Independent Researcher",
+      "kind": "ai",
+      "outputFile": "01_research.md",
+      "status": "done",
+      "response": "## Question and scope\n\n**Should a small nonprofit move its email and files from self-hosted servers to a cloud office suite?**\n\nThe supplied scenario is approximately 25 staff and volunteers, one part-time IT contractor, an aging on-site server, a limited budget, and some donor personal data. The organization’s location, current costs, server functions, security arrangements, and working practices are unknown.\n\nThis report identifies potential benefits and the conditions under which they could be realized. It does not establish that migration will save money or improve security for this particular nonprofit. The most promising case is one in which email and files account for a substantial part of the server’s workload, the organization qualifies for a suitable nonprofit offer, and the contractor has time to configure and maintain the cloud environment.\n\n**Evidence notation:** R-numbered statements are external factual claims. Conditions and consequences stated as analysis are inferences; the numerical example is illustrative.\n\n## Prioritized potential benefits\n\n### 1. Lower or more predictable infrastructure costs\n\nA cloud suite could avoid or defer some expenditure on replacement server hardware and on the infrastructure needed to run email and file services. Nonprofit grants or discounts could make the subscription component inexpensive.\n\n- **R1.** Google lists Google Workspace for Nonprofits at **$0 per user per month** for eligible organizations, including domain-based email and 100 TB of shared storage. Its listed nonprofit Business Standard price is **$3.50 per user per month with a one-year commitment**, or $4.20 billed monthly. Eligibility must be verified. See [Google Workspace for Nonprofits, plan descriptions and prices](https://www.google.com/nonprofits/offerings/workspace/).\n- **R2.** Microsoft lists its nonprofit Business Basic grant as free for up to 300 users, with web and mobile productivity apps and 1 TB of cloud storage per user. See [Microsoft nonprofit offers, “Microsoft 365 Business Basic”](https://www.microsoft.com/en-us/nonprofits/offers-for-nonprofits).\n\n**When this benefit is most likely:** The nonprofit qualifies; a free or discounted edition meets its needs; and moving these workloads lets it retire or materially downsize the old server. The number of people is below both advertised user caps, but that alone does not establish organizational or individual-user eligibility.\n\n**Boundary:** Subscription price is only one part of cost. Migration, contractor setup and ongoing administration, training, backup, paid features, devices, connectivity, and any server functions that remain on-site all matter. A free plan may not provide the desktop applications, retention features, or other controls the nonprofit needs.\n\n### 2. Less server maintenance for a small IT team\n\nMoving email and files to a managed suite can transfer responsibility for operating the underlying service infrastructure to the provider. That could free the part-time contractor from some server patching, hardware repair, and service maintenance.\n\n- **R3.** Microsoft’s shared-responsibility guidance distinguishes provider-managed infrastructure from customer responsibilities for data, settings, and identities and users. Its SaaS matrix treats client devices as a shared responsibility; access-control responsibilities vary by control and service model. See [Microsoft Learn, “Shared responsibility in the cloud”](https://learn.microsoft.com/en-us/azure/security/fundamentals/shared-responsibility).\n\n**When this benefit is most likely:** The contractor currently spends meaningful time maintaining email and file infrastructure, and the server does not have to stay in service for other applications.\n\n**Boundary:** Administration does not disappear. Someone still needs to create and remove accounts, manage access and devices, monitor the service, handle incidents, and test recovery. Migration also creates a temporary workload.\n\n### 3. Access and collaboration across locations\n\nA cloud suite could make it easier for authorized staff and volunteers to use organizational email and work on shared files without depending on access to the office server.\n\n- **R4.** Google describes its nonprofit edition as including domain email, shared calendars, online document editing, and storage. Microsoft describes Business Basic as including web and mobile productivity applications. See [Google’s nonprofit edition description](https://support.google.com/nonprofits/answer/2858465?hl=en) and [Microsoft’s nonprofit offers](https://www.microsoft.com/en-us/nonprofits/offers-for-nonprofits).\n\n**When this benefit is most likely:** People work in different locations or need to edit and share documents frequently, have suitable devices and connectivity, and adopt a consistent shared-file structure.\n\n**Boundary:** Internet access and provider availability become important dependencies. Offline needs, existing file formats and applications, and accessibility or training requirements should be tested before assuming an improvement.\n\n### 4. Opportunity to strengthen access controls for donor data\n\nA centrally managed suite can provide tools to control access and require stronger sign-in. With deliberate configuration, it may be easier for the contractor to manage accounts as volunteers join and leave.\n\n- **R5.** Google states that its nonprofit offering includes administrative controls to manage permissions and enforce two-step verification. See [Google for Nonprofits Help, “Google Workspace for Nonprofits”](https://support.google.com/nonprofits/answer/18865828).\n- **R6.** The Australian Cyber Security Centre’s small-business cloud guidance identifies strong authentication and backups as responsibilities that may fall to the customer, depending on the service and its design and configuration. It advises checking whether backups are included, optional, or require customer implementation. See [Cloud shared responsibility model guidance, “Foundational responsibilities”](https://www.cyber.gov.au/sites/default/files/2025-10/Cloud%20shared%20responsibility%20model%20-%20Guidance%20for%20individuals%20and%20small%20and%20medium%20business.pdf).\n\n**When this benefit is most likely:** The nonprofit enforces appropriate multifactor authentication, limits donor-data access to those who need it, removes leavers promptly, manages sharing, and assigns ownership for monitoring and recovery.\n\n**Boundary:** These controls are capabilities, not evidence that the nonprofit will be safer after migration. Provider security does not correct excessive permissions, compromised accounts, unsafe devices, or a poorly configured tenant. Relevant privacy and data-location obligations depend on the nonprofit’s jurisdiction and agreements, which are unknown.\n\n### 5. Reduced dependence on the aging office server\n\nHosted email and files could remain accessible during an office-server failure or a problem affecting the building, provided users have working connectivity and the provider’s service is available.\n\n- **R7.** Microsoft publishes service-health and continuity information, including historical availability figures, for its online services. These describe the provider’s service and do not establish the nonprofit’s eventual end-to-end availability. See [Microsoft Learn, “Service health and continuity”](https://learn.microsoft.com/en-us/office365/servicedescriptions/office-365-platform-service-description/service-health-and-continuity).\n\n**When this benefit is most likely:** The current server is a single point of failure, users can connect from another location, and the migration includes a tested recovery approach for critical email and files.\n\n**Boundary:** Cloud services can also have outages, and internet or account failures can prevent access. Synchronization and service availability should not be assumed to provide an independent, tested backup or meet a particular recovery objective.\n\n## Illustrative cost calculation and assumptions\n\nThe following is an example, **not a quote or estimate of this nonprofit’s actual costs**. It uses Google’s listed USD Business Standard nonprofit price in R1 and assumes all 25 people need that paid edition, are eligible, and use an annual commitment:\n\n| Subscription component | Calculation | Illustrative amount |\n|---|---:|---:|\n| Annual suite subscription | 25 × $3.50 × 12 months | **$1,050 per year** |\n| Three years of subscription | $1,050 × 3 | **$3,150** |\n\nA suitable $0 edition would have a $0 subscription component under its published offer, but would still have implementation and operating costs. Prices, eligibility, currency, taxes, and offers must be confirmed for the nonprofit’s location and purchase date.\n\nFor a decision, compare **three-year total costs** on a consistent basis:\n\n- **Cloud:** migration and setup + subscriptions + training + backup and other add-ons + ongoing administration + any remaining on-site infrastructure.\n- **Self-hosted:** replacement hardware and acquisition costs + licenses + maintenance and support + power/connectivity + backup + ongoing administration.\n\nDo not count the full replacement-server cost as avoided if the server is still needed for other workloads. Likewise, contractor time is a financial saving only if spending can actually be reduced; otherwise it may be capacity available for other work.\n\n## Alternatives and comparison boundaries\n\n- **Refresh or maintain self-hosting.** A replacement server or a supported managed on-site arrangement may be preferable if local applications require it, connectivity is unreliable, or the existing environment already meets the organization’s needs at reasonable cost.\n- **Move only one workload first.** Hosted email with files remaining on-site, or hosted files with email retained temporarily, could capture some benefits while reducing migration scope. It may also extend the period in which both environments require administration.\n- **Use a managed provider or another hosted service.** Outsourcing operation without adopting a full office suite may suit the organization if compatibility or local support matters more than bundled collaboration tools.\n\nCompare the alternatives against the same service level: email and file functionality, security controls, backup and recovery, support, user access, and a realistic period of ownership. Check data export and exit arrangements before committing to a provider.\n\n## Unresolved information and prioritized user questions\n\n1. **What else does the aging server run, and could it be retired after email and files move?**  \n   This determines how much hardware replacement and maintenance can actually be avoided.\n\n2. **Where is the nonprofit located, is it eligible for nonprofit offers, and which users need desktop apps or special retention and security features?**  \n   These answers determine applicable pricing, licensing, and whether a free edition is sufficient.\n\n3. **How are donor data, access, backups, and recovery handled today, and what connectivity and remote-working needs do users have?**  \n   This establishes the baseline for any security, continuity, and collaboration benefit and identifies configuration or additional costs.\n\n## Readiness for source verification\n\nThe linked sources are directly accessible public vendor or government pages and were located for this report. R1–R7 identify the relevant page sections or descriptions; the benefit judgments are conditional inferences rather than measured outcomes for this nonprofit.\n\nBefore a purchase decision, independently recheck current local nonprofit eligibility, volunteer licensing, plan features, prices, backup and retention provisions, and contract terms. Inventory the existing server and obtain migration and ongoing-support estimates; the supplied scenario does not contain enough information to calculate a reliable return on investment.",
+      "responseSource": "agent",
+      "wordCount": 1602,
+      "signals": {},
+      "agent": {
+        "jobId": "job-mwieofll-vxr7",
+        "provider": "codex",
+        "model": "gpt-6.1-terra",
+        "sessionId": "01a1e153-3b4c-7881-9ed9-0afe91772935",
+        "startedAt": "2026-11-15T22:28:10.617Z",
+        "finishedAt": "2026-11-15T22:28:54.022Z",
+        "durationMs": 43405,
+        "toolCalls": 0,
+        "usage": {
+          "inputTokens": 18882,
+          "outputTokens": 2238
+        }
+      },
+      "prompt": "# Session 01 — Independent Researcher\n\n**Input:** Research question and any explicitly provided scenario constraints. Start a **fresh chat**.\n\nInvestigate this decision:\n\n> Should a small nonprofit move its email and files from self-hosted servers to a cloud office suite?\n\nScenario constraints / scope supplied by the user:\n\n> About 25 staff and volunteers, one part-time IT contractor, an aging on-site server, limited budget, handles some donor personal data.\n\nYour goal is to identify **potential benefits** and the circumstances under which they may be achieved. Produce a self-contained report for independent review, not a definitive universal verdict.\n\n1. Prioritize **up to five** consequential benefits or advantages.\n2. Label supporting external factual claims **R1, R2, ...**, provide accessible, specific links and pinpoint source passages/sections where possible.\n3. Clearly distinguish directly sourced statements, assumptions, illustrative calculations, and user-dependent scenarios.\n4. Include major comparison boundaries (e.g., operating versus acquisition cost), plausible alternatives, and limitations without conducting the adversarial critic's job.\n5. Include **up to three questions** for the user whose answers could materially alter the expected benefits. Explain why each matters. Don't request answers in this chat.\n6. Don't invent user circumstances or claim to have inspected sources you cannot access. If a necessary external source is inaccessible, say so.\n\n**Output:** `01_research.md` with: question/scope; benefits and numbered claims; evidence/source links; illustrative calculations/assumptions; alternatives/boundaries; unresolved information and prioritized user questions; readiness for source verification.\n\nKeep the report focused rather than encyclopedic. Do not ask interactive follow-up questions.",
+      "inputFiles": [],
+      "inputsDigest": "af2cd5e1",
+      "savedAt": "2026-11-15T22:28:54.022Z"
+    },
+    {
+      "id": "02",
+      "label": "Research Source Verifier",
+      "kind": "ai",
+      "outputFile": "02_source_verification.md",
+      "status": "done",
+      "response": "# 02 — Source verification\n\nChecked against the linked pages on 15 November 2026. Labels assess whether the cited source supports the attributed statement, not whether the nonprofit should migrate.\n\n| ID | Result | Source location | Explanation |\n|---|---|---|---|\n| R1 | **Supported** | [Google Workspace for Nonprofits, “Compare nonprofit offers”](https://www.google.com/nonprofits/offerings/workspace/) | The page lists the $0 nonprofit edition with domain email and 100 TB shared storage, and Business Standard at $3.50 per user per month with a one-year commitment or $4.20 billed monthly. It limits the offers to eligible organizations. |\n| R2 | **Supported** | [Microsoft nonprofit offers, “Microsoft 365 Business Basic”](https://www.microsoft.com/en-us/nonprofits/offers-for-nonprofits) | The page lists web and mobile apps, 1 TB of cloud storage per user, and free support for up to 300 users. |\n| R3 | **Supported** | [Microsoft Learn, “Division of responsibility” and “Responsibility matrix”](https://learn.microsoft.com/en-us/azure/security/fundamentals/shared-responsibility) | The matrix assigns SaaS customer data, configurations and identities to the customer; client devices are shared; and underlying infrastructure is assigned to Microsoft. The accompanying text distinguishes customer access management from provider-managed network security. |\n| R4 | **Supported** | [Google, “Google Workspace for Nonprofits features”](https://support.google.com/nonprofits/answer/2858465?hl=en); [Microsoft, “Microsoft 365 Business Basic”](https://www.microsoft.com/en-us/nonprofits/offers-for-nonprofits) | Google lists custom email, shared calendars, online documents and shared storage. Microsoft lists web and mobile productivity apps. |\n| R5 | **Supported** | [Google, “How it works,” centralized cloud storage and security](https://support.google.com/nonprofits/answer/18865828) | Google describes administrative controls for user permissions and enforcement of two-step verification. |\n| R6 | **Supported** | [Australian Cyber Security Centre, “Foundational responsibilities,” p. 2, and “Backups,” p. 3](https://www.cyber.gov.au/sites/default/files/2025-10/Cloud%20shared%20responsibility%20model%20-%20Guidance%20for%20individuals%20and%20small%20and%20medium%20business.pdf) | The guidance identifies strong authentication and backups as possible customer responsibilities depending on the service and its design and configuration. It describes included, optional and customer-implemented backup arrangements and supplies questions for checking them. |\n| R7 | **Supported** | [Microsoft Learn, “Recent worldwide uptimes” and “Service continuity”](https://learn.microsoft.com/en-us/office365/servicedescriptions/office-365-platform-service-description/service-health-and-continuity) | The page publishes historical worldwide uptime figures and describes service continuity. Its figures exclude U.S. Government DoD and GCC High; service-health details require administrator sign-in. The report correctly does not treat these figures as the nonprofit’s end-to-end availability. |\n\n## Material discrepancies\n\nNone found in R1–R7. The Microsoft Learn pages displayed authorization notices, but the relevant article text and tables were accessible and inspected.\n\nThe stated scenario, conditional benefit judgments, and explicitly illustrative cost assumptions are outside this source-to-claim check. The example’s $3.50 price corresponds to R1.\n\n## Gate result: **Pass**\n\nNo targeted correction is required for the cited claims.",
+      "responseSource": "agent",
+      "wordCount": 394,
+      "signals": {
+        "gate": "Pass"
+      },
+      "agent": {
+        "jobId": "job-mwiepd3c-q4rs",
+        "provider": "codex",
+        "model": "gpt-6.1-terra",
+        "sessionId": "01a1e153-e4d5-7281-ba40-9291f906ccb5",
+        "startedAt": "2026-11-15T22:28:54.024Z",
+        "finishedAt": "2026-11-15T22:29:21.936Z",
+        "durationMs": 27912,
+        "toolCalls": 2,
+        "usage": {
+          "inputTokens": 77666,
+          "outputTokens": 1107
+        }
+      },
+      "prompt": "# Session 02 — Research Source Verifier\n\n**Input:** `01_research.md`. Start a **fresh chat**.\n\nYour **only** responsibility is **source-to-claim correspondence**: does each cited source actually say or substantiate what Report 01 attributes to it?\n\nFor each material claim R1, R2, etc.:\n- Open the cited source if possible and locate the relevant supporting material.\n- Identify any qualification, misquotation, wrong number, inaccessible citation, or unsupported leap in what is attributed to that source.\n- Classify **Supported / Partially Supported / Unsupported / Contradicted / Unverifiable**. These labels refer to correspondence, **not overall factual truth**.\n- Cite the specific passage/section you inspected; do not pretend to have accessed a blocked source.\n\n**Do not** decide whether the proposed choice is worthwhile, evaluate the study's underlying methodology, introduce new research, or audit the overall decision. If a claim is an expressly labeled scenario assumption rather than source-attributed fact, mark it out of scope.\n\n**Output:** `02_source_verification.md`: concise per-claim table (ID, result, source location, explanation), material discrepancies, and gate result **Pass / Revise / Block**. Request targeted correction rather than rewriting the original report. Do not ask the user questions.",
+      "inputFiles": [
+        "01_research.md"
+      ],
+      "inputsDigest": "98feff5d",
+      "savedAt": "2026-11-15T22:29:21.936Z"
+    },
+    {
+      "id": "03",
+      "label": "Benefits Synthesizer",
+      "kind": "ai",
+      "outputFile": "03_benefits_summary.md",
+      "status": "done",
+      "response": "# Benefits Summary\n\nMoving email and files to a cloud office suite could reduce dependence on the aging server and make collaboration easier for approximately 25 staff and volunteers. The size of those benefits depends on eligibility, current costs, remaining server functions, and how the service is configured and maintained.\n\n- **Potentially lower costs.** Eligible nonprofits may qualify for free or discounted plans (R1–R2). Savings depend on whether those plans meet users’ needs and whether the server can be retired or downsized; migration, support, backup, and training still cost money.\n- **Less infrastructure maintenance.** The provider operates underlying service infrastructure (R3), which could free contractor time if email and files account for substantial current work. Account, device, security, and recovery administration remain.\n- **Easier remote collaboration.** The cited plans offer online email, documents, storage, or productivity apps (R4). The benefit depends on connectivity, compatible devices and files, and user adoption.\n- **Stronger access management.** Google describes controls for permissions and two-step verification (R5). Security could improve if the nonprofit configures controls, removes leavers promptly, and maintains backups (R6).\n- **Less exposure to an office-server failure.** Hosted services could remain accessible from elsewhere, subject to connectivity and provider availability (R7). A tested recovery approach is still needed.\n\nThe verification report passed R1–R7 and found **no material Revise or Block gate**. Its “Supported” labels establish correspondence with the cited sources, not that savings, security, or availability will improve for this nonprofit. The cost example is illustrative, not an estimate.\n\n## Prioritized questions\n\n1. **What else runs on the server, and could it be retired?** This determines how much hardware and maintenance expense could actually be avoided.\n2. **Where is the nonprofit located, and which users need desktop apps or special controls?** Location and needs affect eligibility, licensing, and whether a free plan is sufficient.\n3. **How are donor-data access, backups, recovery, connectivity, and remote work handled today?** The answers establish the baseline and reveal potential benefits and additional costs.",
+      "responseSource": "agent",
+      "wordCount": 324,
+      "signals": {},
+      "agent": {
+        "jobId": "job-mwiepymq-ibd7",
+        "provider": "codex",
+        "model": "gpt-6.1-terra",
+        "sessionId": "01a1e154-51e4-7821-93ba-77daac52329a",
+        "startedAt": "2026-11-15T22:29:21.938Z",
+        "finishedAt": "2026-11-15T22:29:33.261Z",
+        "durationMs": 11323,
+        "toolCalls": 0,
+        "usage": {
+          "inputTokens": 18537,
+          "outputTokens": 445
+        }
+      },
+      "prompt": "# Session 03 — Benefits Synthesizer\n\n**Input:** `01_research.md` and `02_source_verification.md`. Start a **fresh chat**.\n\nProduce a **user-facing benefits summary** using only the supplied reports. Do not add new evidence, exaggerate verification status, or make a final recommendation. A verifier's \"Supported\" label confirms source correspondence, not that the underlying claim is true in every setting.\n\n**Output:** `03_benefits_summary.md`, **300 words maximum**, titled **Benefits Summary**:\n1. Two-sentence opportunity overview.\n2. Up to five high-value potential benefits, each with conditions and claim IDs where useful.\n3. Critical evidence/source-correlation limitations, explicitly mentioning any material `Revise` or `Block` gate.\n4. **Up to three prioritized questions for the user**, each with a brief explanation of how the answer could change the expected benefit. Avoid cosmetic/background questions.\n\nDistinguish established source attribution from modeled or hypothetical upside. Do not ask for answers in this chat.",
+      "inputFiles": [
+        "01_research.md",
+        "02_source_verification.md"
+      ],
+      "inputsDigest": "ea1efd48",
+      "savedAt": "2026-11-15T22:29:33.261Z"
+    },
+    {
+      "id": "04",
+      "label": "Adversarial Critic",
+      "kind": "ai",
+      "outputFile": "04_critique.md",
+      "status": "done",
+      "response": "# 04 — Independent adversarial critique\n\nThe source-verification pass supports the correspondence between R1–R7 and their cited sources. It does not establish that the benefits exceed the costs or risks for this nonprofit.\n\n## Prioritized objections\n\n1. **C1 — Cost and maintenance: moving two workloads may leave most server costs in place.**  \n   **Logical objection.** The server may still be needed for a donor database, local applications, authentication, printing, or other functions. If so, the nonprofit could pay for cloud migration and administration while continuing to support and eventually replace the server. This matters most if email and files are a small part of the contractor’s workload or the existing server costs are largely fixed. **Decision effect:** Potentially decisive for the cost case; a partial migration could still be worthwhile for other reasons.\n\n2. **C2 — Cost: a free offer may not cover the organization’s actual pattern of use.**  \n   Microsoft’s nonprofit program requires continuing eligibility and attestation; it also describes active-use requirements for granted Microsoft 365 licenses. Infrequent volunteer use could therefore create license-management work, though its effect on this organization is **unverified**. See [Microsoft’s eligibility guidance](https://learn.microsoft.com/en-us/industry/nonprofit/microsoft-for-nonprofits/eligibility) and [grant usage guidance](https://learn.microsoft.com/en-us/industry/nonprofit/microsoft-for-nonprofits/grant-usage-recurring-notifications). Separately, **as a logical objection**, required desktop applications, retention controls, backup, or support could make the free edition insufficient. **Decision effect:** Material if volunteers use accounts intermittently or paid features are essential; compare actual user needs and a paid-plan fallback over the same three-year period.\n\n3. **C3 — Security and continuity: cloud administration and recovery may exceed available capacity.**  \n   **Logical objection.** A part-time contractor must have time and appropriate access to configure identities and sharing, respond to incidents, and test recovery. Centralizing access can also make a compromised administrator account consequential. CISA recommends considering backups in separate tenancies, other clouds, or outside the cloud environment to limit exposure to compromise or unavailability; that guidance does not establish that a particular nonprofit needs every measure. See [CISA’s cloud use-case guidance, backup and recovery](https://www.cisa.gov/sites/default/files/2025-07/CISA%20TIC%203.0%20Cloud%20Use%20Case%20v1.2.pdf). **Decision effect:** Material if no one can own these tasks or fund an acceptable recovery arrangement. The access-control capability remains useful, but it is not proof of a security improvement.\n\n4. **C4 — Collaboration: migration can disrupt workflows or fail to preserve what users rely on.**  \n   **Hypothetical scenario.** A critical spreadsheet with macros, a shared mailbox, inherited file permissions, or a specialized application’s file connection may not work as expected after migration. Recreating access, correcting files, supporting users, and running both environments during transition could absorb limited contractor time. This matters most if critical workflows are complex or poorly documented. **Decision effect:** Could favor a phased move, a different suite, or continued hosting for particular workloads. Test representative files, permissions, and integrations before treating collaboration gains as realized.\n\n5. **C5 — Continuity and choice: the office server is only one possible point of failure.**  \n   **Logical objection.** Hosted email and files may survive a building outage while becoming inaccessible during an internet, identity, account, or provider outage. Exporting data is also only one part of changing providers: **as a hypothetical scenario**, permissions, workflows, and application integrations might require substantial reconstruction. This matters especially if the nonprofit must operate during outages or expects to change providers. **Decision effect:** Material if a connectivity workaround, recovery process, and practical exit path cannot meet its needs at an acceptable cost.\n\n## Benefits that remain persuasive\n\n- **Reduced exposure to a single aging server** is a credible benefit if it is currently a single point of failure and users can connect elsewhere. Its value should be assessed against the new dependencies and tested recovery arrangements.\n- **Managed infrastructure and remote collaboration** are credible opportunities for a small team. Their value depends on the workloads actually removed, compatible workflows, and sustained administration—not on vendor features alone.\n- **Free or discounted nonprofit plans** are a meaningful opportunity worth investigating, subject to eligibility and a full cost comparison. The verified prices are not evidence of net savings.\n\n## Unresolved information and prioritized user questions\n\n1. **What services and applications depend on the current server, what does each cost to support, and could the server actually be retired or downsized?**\n2. **Where is the nonprofit located; which staff and volunteers need accounts, desktop apps, retention or other controls; and how regularly do they use them?**\n3. **What are the critical donor-data workflows, current access and backup arrangements, recovery needs, connectivity constraints, and available contractor capacity and budget for migration and ongoing administration?**",
+      "responseSource": "agent",
+      "wordCount": 749,
+      "signals": {},
+      "agent": {
+        "jobId": "job-mwieq7dc-r2a8",
+        "provider": "codex",
+        "model": "gpt-6.1-terra",
+        "sessionId": "01a1e154-7e1b-76c0-a1c1-d26f3deb83e5",
+        "startedAt": "2026-11-15T22:29:33.264Z",
+        "finishedAt": "2026-11-15T22:29:59.350Z",
+        "durationMs": 26086,
+        "toolCalls": 1,
+        "usage": {
+          "inputTokens": 46290,
+          "outputTokens": 1172
+        }
+      },
+      "prompt": "# Session 04 — Independent Adversarial Critic\n\n**Input:** `01_research.md`, `02_source_verification.md`, `03_benefits_summary.md`. Start a **fresh chat**.\n\nIndependently challenge whether the **proposed benefits apply and are worth pursuing**. Your objective is not to force a \"no\" answer; it is to uncover material omissions, risks, hidden costs, alternative explanations, tradeoffs, and failure conditions.\n\n1. Prioritize **up to five** meaningful objections and label them **C1, C2, ...**.\n2. For each: name the affected benefit/claim, the concern, why it matters, when it applies, and whether it could alter the decision.\n3. Cite specific accessible evidence for **new external factual counterclaims**. Clearly mark **logical objections**, **hypothetical scenarios**, and **unverified conjectures** as such.\n4. Identify any well-supported benefits that remain persuasive; do not manufacture symmetrical opposition.\n5. Give **up to three questions for the user** that could materially change the severity/applicability of the cautions. Don't request answers in this chat.\n6. Respect the findings of the source verifier without assuming source correspondence proves the researcher's conclusion.\n\n**Output:** `04_critique.md`: concise numbered objections with supporting citations, surviving benefits, unresolved information, and prioritized user questions. Do **not** rewrite the original research or impose a final decision.",
+      "inputFiles": [
+        "01_research.md",
+        "02_source_verification.md",
+        "03_benefits_summary.md"
+      ],
+      "inputsDigest": "9a7c223b",
+      "savedAt": "2026-11-15T22:29:59.350Z"
+    },
+    {
+      "id": "05",
+      "label": "Critique Source Verifier",
+      "kind": "ai",
+      "outputFile": "05_critique_verification.md",
+      "status": "done",
+      "response": "# 05 — Critique source verification\n\nChecked on 15 November 2026. The classifications assess source-to-claim correspondence only.\n\n| Objection | Classification | Passage inspected and correspondence |\n|---|---|---|\n| **C1** | **Not Applicable — Nonfactual** | No external source is attributed. The objection is conditional reasoning about possible remaining server costs. |\n| **C2** | **Supported** | Microsoft’s [eligibility guidance, “Additional Terms of Use”](https://learn.microsoft.com/en-us/industry/nonprofit/microsoft-for-nonprofits/eligibility), requires regular attestation to maintain eligibility. Its [grant usage guidance, “M365 Utilization Grant Requirements”](https://learn.microsoft.com/en-us/industry/nonprofit/microsoft-for-nonprofits/grant-usage-recurring-notifications), describes active-use requirements and notifications. The possible effect of intermittent volunteer use is correctly presented as unverified for this organization. |\n| **C3** | **Supported** | The search-indexed text of CISA’s [Cloud Use Case, Table 2, “Backup and Recovery”](https://www.cisa.gov/sites/default/files/2025-07/CISA%20TIC%203.0%20Cloud%20Use%20Case%20v1.2.pdf), says agencies may consider separate cloud tenancies, other cloud environments, or copies outside the cloud environment to address exposure or unavailability. The critique does not claim these measures are all required for this nonprofit. Direct retrieval of the PDF returned **403 Forbidden**; the classification relies on the indexed passage. |\n| **C4** | **Not Applicable — Nonfactual** | No external source is attributed. The examples are identified as hypothetical workflow problems. |\n| **C5** | **Not Applicable — Nonfactual** | No external source is attributed. The objection uses logical dependencies and hypothetical exit difficulties. |\n\n## Material discrepancies\n\nNone found in the sourced counterclaims. The Microsoft pages displayed authorization notices, but the relevant article text was accessible. CISA’s cited PDF was blocked on direct retrieval; its relevant passage was accessible through search-indexed text.\n\n## Source gate: **Pass**\n\nNo targeted evidence correction is required.",
+      "responseSource": "agent",
+      "wordCount": 248,
+      "signals": {
+        "gate": "Pass"
+      },
+      "agent": {
+        "jobId": "job-mwieqri0-acao",
+        "provider": "codex",
+        "model": "gpt-6.1-terra",
+        "sessionId": "01a1e154-e405-7ef2-aad2-fe6eccadb5e9",
+        "startedAt": "2026-11-15T22:29:59.352Z",
+        "finishedAt": "2026-11-15T22:30:19.827Z",
+        "durationMs": 20475,
+        "toolCalls": 2,
+        "usage": {
+          "inputTokens": 70968,
+          "outputTokens": 711
+        }
+      },
+      "prompt": "# Session 05 — Critique Source Verifier\n\n**Input:** `01_research.md`, `02_source_verification.md`, `03_benefits_summary.md`, `04_critique.md`. Start a **fresh chat**.\n\nYour **only** responsibility is to check **source-to-claim correspondence** for the **new factual counterclaims** the critic attributes to cited sources.\n\nFor each numbered objection C1, C2, etc.:\n- Identify any sourced external factual assertion and inspect the specific cited material where accessible.\n- Classify that correspondence **Supported / Partially Supported / Unsupported / Contradicted / Unverifiable**.\n- If an objection is purely logical, conditional, mathematical, or hypothetical with no attributed external source, classify source checking as **Not Applicable — Nonfactual**. This does **not** mean the objection is wrong.\n- State what section/passage was inspected and note blocked sources honestly.\n\n**Do not** adjudicate whether the critic wins, re-evaluate overall merit, or generate competing arguments. Do not expand into a general arithmetic/model audit.\n\n**Output:** `05_critique_verification.md`: compact objection-by-objection source correspondence table; material discrepancies; **Pass / Revise / Block** source gate. Request targeted evidence correction when needed. Do not ask interactive questions.",
+      "inputFiles": [
+        "01_research.md",
+        "02_source_verification.md",
+        "03_benefits_summary.md",
+        "04_critique.md"
+      ],
+      "inputsDigest": "ec699dd6",
+      "savedAt": "2026-11-15T22:30:19.827Z"
+    },
+    {
+      "id": "06",
+      "label": "Cautions Synthesizer",
+      "kind": "ai",
+      "outputFile": "06_cautions_summary.md",
+      "status": "done",
+      "response": "# Cautions Summary\n\n- **Costs may remain after migration (C1).** The proposed cost and maintenance benefits weaken if other applications keep the server in service or email and files account for little contractor time. This is a **logically conditional** objection; it could be decisive for the cost case.\n- **Free plans may not fit every user (C2).** The proposed savings depend on eligibility, usage, and required features. Microsoft’s continuing eligibility and grant-usage requirements are **source-correlated**; their effect on intermittent volunteers is **unverified**. The possibility that paid features are needed is **logically conditional**.\n- **Administration and recovery need ownership (C3).** The proposed security and continuity benefits depend on contractor capacity and an affordable recovery arrangement. The cited backup guidance is **partly verified** through indexed text because direct PDF retrieval was blocked; the capacity objection is **logically conditional**.\n- **Workflows may need repair (C4).** The proposed collaboration benefit could be delayed if representative files, permissions, shared mailboxes, or integrations do not work as expected. These examples are **hypothetical and logically conditional**; testing can reveal whether a phased move is workable.\n- **New dependencies and exit costs matter (C5).** Reduced reliance on the office server comes with dependence on connectivity, identity, and the provider. Recovery or a later move could be difficult; this is **logically conditional**.\n\nInability to fund or assign essential administration and recovery, or to meet critical workflow and continuity needs, could be dealbreakers. Licensing costs, transition work, and retained server functions may be manageable tradeoffs if their benefits justify them.\n\n**Verifier status:** No material `Revise` or `Block` outcomes remain outstanding. The C3 retrieval limitation remains as noted above.\n\n## Prioritized questions\n\n1. Which server services must remain, and what costs and contractor time could actually be avoided?\n2. Which users need accounts, desktop apps, or special controls, and how regularly do volunteers use them?\n3. What are the critical workflows and recovery needs, and what budget and contractor capacity are available to support them?",
+      "responseSource": "agent",
+      "wordCount": 325,
+      "signals": {},
+      "agent": {
+        "jobId": "job-mwier7at-klq1",
+        "provider": "codex",
+        "model": "gpt-6.1-terra",
+        "sessionId": "01a1e155-3404-7a51-92aa-8a32407c9e50",
+        "startedAt": "2026-11-15T22:30:19.829Z",
+        "finishedAt": "2026-11-15T22:30:30.739Z",
+        "durationMs": 10910,
+        "toolCalls": 0,
+        "usage": {
+          "inputTokens": 20585,
+          "outputTokens": 442
+        }
+      },
+      "prompt": "# Session 06 — Cautions Synthesizer\n\n**Input:** All preceding five reports (`01_research.md` through `05_critique_verification.md`). Start a **fresh chat**.\n\nProduce the human-facing caution summary from the supplied record. Do not introduce new facts or treat an unsupported sourced objection as proven. A logical objection can matter even when source verification is not applicable.\n\n**Output:** `06_cautions_summary.md`, **300 words maximum**, titled **Cautions Summary**:\n1. Up to five high-consequence risks, pitfalls, or alternative considerations.\n2. For each, note which proposed benefit it changes, when it matters, and whether evidence was source-correlated, partly verified, unverifiable, or logically conditional (cite C IDs).\n3. Briefly distinguish genuine potential dealbreakers from manageable tradeoffs; do not force a negative outcome.\n4. Flag material verifier `Revise` or `Block` outcomes still outstanding.\n5. **Up to three prioritized questions for the user** whose answers would materially change the cautions. Avoid repeating questions from the Benefits Summary unless necessary; when unavoidable, consolidate them.\n\nNo definitive recommendation, new external research, or request for immediate conversational answers.",
+      "inputFiles": [
+        "01_research.md",
+        "02_source_verification.md",
+        "03_benefits_summary.md",
+        "04_critique.md",
+        "05_critique_verification.md"
+      ],
+      "inputsDigest": "e0b5c269",
+      "savedAt": "2026-11-15T22:30:30.739Z"
+    },
+    {
+      "id": "gate",
+      "label": "Your Review",
+      "kind": "human",
+      "outputFile": "user_responses.md",
+      "status": "done",
+      "response": "# Human Review — Should a small nonprofit move its email and files from self-hosted servers to a cloud office suite?\n\n## Benefits summary answers\nQuestions raised:\n1. What else runs on the server, and could it be retired? This determines how much hardware and maintenance expense could actually be avoided.\n2. Where is the nonprofit located, and which users need desktop apps or special controls? Location and needs affect eligibility, licensing, and whether a free plan is sufficient.\n3. How are donor-data access, backups, recovery, connectivity, and remote work handled today? The answers establish the baseline and reveal potential benefits and additional costs.\n\nAnswer:\n\n1. The server does email, shared files and a small donor database that one staff member uses. Nothing else. The donor database could move to a hosted tool later, but it would stay on the server for now.\n2. We're a registered charity, so I believe we'd qualify for the nonprofit discounts. About 18 people need the full desktop apps; the rest are volunteers who only need email and a shared folder.\n3. Backups run to an external drive that the contractor swaps weekly. Staff can reach files from home through a VPN that breaks a lot. Our internet is ordinary broadband and has been reliable.\n\n## Cautions summary answers\nQuestions raised:\n1. Which server services must remain, and what costs and contractor time could actually be avoided?\n2. Which users need accounts, desktop apps, or special controls, and how regularly do volunteers use them?\n3. What are the critical workflows and recovery needs, and what budget and contractor capacity are available to support them?\n\nAnswer:\n\n1. If the server stays for the donor database, we would save maybe a third of the hosting and power costs and some of the contractor's time. Right now the contractor spends roughly a day a month on email and file problems.\n2. Around 18 accounts would use the apps daily. Volunteers log in once or twice a week, so I'd want to know whether they can use a cheaper or free plan.\n3. The critical things are email and the donor list. We can tolerate a day of downtime but not losing data. Budget is tight, maybe $150 a month in total, and the contractor has about six hours a month to give us.\n\n## Additional context / corrections\n- Donor details include names, addresses and gift amounts, but no card numbers. The board wants a clear low-risk plan, and we'd rather move in phases than all at once.\n\n## Authorization\n- [x] Proceed to Session 07\n- [ ] Run another round with this context\n- [ ] Pause\n- [ ] Stop the investigation\n",
+      "fields": {
+        "bq": "1. The server does email, shared files and a small donor database that one staff member uses. Nothing else. The donor database could move to a hosted tool later, but it would stay on the server for now.\n2. We're a registered charity, so I believe we'd qualify for the nonprofit discounts. About 18 people need the full desktop apps; the rest are volunteers who only need email and a shared folder.\n3. Backups run to an external drive that the contractor swaps weekly. Staff can reach files from home through a VPN that breaks a lot. Our internet is ordinary broadband and has been reliable.",
+        "cq": "1. If the server stays for the donor database, we would save maybe a third of the hosting and power costs and some of the contractor's time. Right now the contractor spends roughly a day a month on email and file problems.\n2. Around 18 accounts would use the apps daily. Volunteers log in once or twice a week, so I'd want to know whether they can use a cheaper or free plan.\n3. The critical things are email and the donor list. We can tolerate a day of downtime but not losing data. Budget is tight, maybe $150 a month in total, and the contractor has about six hours a month to give us.",
+        "ctx": "Donor details include names, addresses and gift amounts, but no card numbers. The board wants a clear low-risk plan, and we'd rather move in phases than all at once.",
+        "auth": "proceed"
+      },
+      "responseSource": "form",
+      "inputFiles": [
+        "03_benefits_summary.md",
+        "06_cautions_summary.md"
+      ],
+      "inputsDigest": "4a87368b",
+      "savedAt": "2026-11-15T22:30:51.833Z"
+    },
+    {
+      "id": "07",
+      "label": "Decision Synthesizer",
+      "kind": "ai",
+      "outputFile": "07_decision_brief.md",
+      "status": "done",
+      "response": "# User-Informed Decision Brief\n\n## Current assessment\n\nA phased move of email and shared files could improve remote access and reduce some support work, but the server must remain for the donor database. The nonprofit’s account of its costs, usage, backups and contractor capacity is user-supplied and has not been independently verified.\n\n## Relevant benefits and their conditions\n\n- **Remote collaboration:** Moving files could reduce reliance on the unreliable VPN, provided broadband, devices, permissions and representative files work well in practice (R4).\n- **Lower maintenance:** The user estimates that email and files occupy about one contractor day a month and that retaining the server would save only about a third of hosting and power costs. Actual net savings remain uncertain after licensing, migration, backup and support (R3).\n- **Access and continuity:** Cloud controls and access away from the office could help, but depend on configuration, prompt account removal, connectivity and tested recovery (R5–R7). The donor database remains exposed to server failure.\n\n## Relevant cautions and remaining uncertainties\n\n- **Cost and licensing:** The $150 monthly budget must cover the required arrangements. Eighteen people need desktop apps; the verified free offerings do not establish that this need can be met within budget. Charity registration alone does not establish eligibility, and the effect of volunteers’ weekly usage on any grant remains unverified (C1–C2).\n- **Recovery and ownership:** The tolerance is one day of downtime with no data loss. Whether that can be met for both cloud data and the retained donor database is unknown; weekly drive swaps alone do not establish it. Six contractor hours monthly may be insufficient (C3). The C3 source check relied on indexed text because the PDF was inaccessible.\n- **Transition and dependency:** Mail, shared folders, permissions and critical workflows need testing; provider access, identity and connectivity become important dependencies (C4–C5).\n\nThe verification reports passed their source-correspondence gates. Those findings do not establish the nonprofit’s actual savings, eligibility, security or recovery capability.\n\n**Suggested next action: Investigate further.** Obtain a complete monthly and migration cost, assign administration and recovery ownership, and test a phased pilot before committing. The board remains the decision-maker.\n\n## Material unanswered questions\n\n1. Which eligible plans meet desktop-app and volunteer needs, and what are the full recurring and transition costs?\n2. What recovery design can meet the stated downtime and data-loss tolerance for email, files and the donor database, and can it be funded and operated?\n3. Can a pilot validate critical workflows and show how much contractor time and server expense would actually be saved?",
+      "responseSource": "agent",
+      "wordCount": 415,
+      "signals": {
+        "action": "Investigate further"
+      },
+      "agent": {
+        "jobId": "job-mwierw3g-j4ik",
+        "provider": "codex",
+        "model": "gpt-6.1-terra",
+        "sessionId": "01a1e155-b18e-7a33-9f4f-873877518c31",
+        "startedAt": "2026-11-15T22:30:51.964Z",
+        "finishedAt": "2026-11-15T22:31:04.541Z",
+        "durationMs": 12577,
+        "toolCalls": 0,
+        "usage": {
+          "inputTokens": 18420,
+          "outputTokens": 537
+        }
+      },
+      "prompt": "# Session 07 — User-Informed Decision Synthesizer\n\n**Input:** `03_benefits_summary.md`, `06_cautions_summary.md`, `02_source_verification.md`, `05_critique_verification.md`, and `user_responses.md`. Provide `01_research.md` and `04_critique.md` as well if claim-level context is needed. Start a **fresh chat**.\n\nYou are combining **two independently developed perspectives and the user's answers** into a brief, user-specific decision aid. The user has already reviewed the summaries and chosen to proceed.\n\n1. Explain which potential benefits apply or fail to apply based on supplied user context.\n2. Explain which cautions are applicable, reduced, increased, or still unresolved.\n3. Maintain the distinction between **verified source correspondence**, reasoned inference, scenario assumptions, and factual claims the user supplied but no independent source checked.\n4. Do not invent new research, silently treat user assertions as external verification, or assert certainty where source/reasoning gaps remain.\n5. If critical questions cannot be resolved with the record, recommend further investigation instead of deciding by fiat.\n6. Refer back to report IDs/claim IDs where it materially improves traceability.\n\n**Output:** `07_decision_brief.md`, **400 words maximum**, titled **User-Informed Decision Brief**:\n- Current assessment (2–3 sentences)\n- Relevant benefits and their conditions\n- Relevant cautions and remaining uncertainties\n- **Suggested next action:** Proceed / Proceed conditionally / Investigate further / Do not proceed — with brief rationale\n- At most three material unanswered questions\n\nThis is **decision support**. The human remains the final decision-maker. Do not launch another iteration or ask interactive questions.",
+      "inputFiles": [
+        "03_benefits_summary.md",
+        "06_cautions_summary.md",
+        "02_source_verification.md",
+        "05_critique_verification.md",
+        "user_responses.md"
+      ],
+      "inputsDigest": "39be8298",
+      "savedAt": "2026-11-15T22:31:45.669Z"
+    }
+  ],
+  "integrity": {
+    "algorithm": "sha256",
+    "contentHash": "sha256:0ee7cc37a1470ca1e4e24044d2a402fb4236181208c262eeefb862087e8eb0ed",
+    "computedAt": "2026-11-15T22:31:45.681Z"
+  }
+}
